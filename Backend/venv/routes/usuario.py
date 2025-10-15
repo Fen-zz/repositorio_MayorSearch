@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models import Usuario
 from database import get_db
-from schemas import UsuarioCreate, UsuarioOut
+from schemas import UsuarioCreate, UsuarioOut, UsuarioBase
 from utils.utils import hash_password
 
 router = APIRouter()
@@ -34,10 +34,42 @@ def crear_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         password=hashed_password,
         proveedor=usuario.proveedor,
         idproveedor=usuario.idproveedor,
-        codigoestudiantil=usuario.codigoestudiantil
+        codigoestudiantil=usuario.codigoestudiantil,
+        rol=usuario.rol or "normal"
     )
 
     db.add(nuevo_usuario)
     db.commit()
     db.refresh(nuevo_usuario)
     return nuevo_usuario
+
+# ACTUALIZAR
+@router.put("/usuarios/{idusuario}", response_model=UsuarioOut)
+def actualizar_usuario(
+    idusuario: int,
+    usuario_actualizado: UsuarioBase,
+    db: Session = Depends(get_db)
+):
+    usuario_db = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
+    if not usuario_db:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    usuario_db.nombreusuario = usuario_actualizado.nombreusuario
+    usuario_db.telefono = usuario_actualizado.telefono
+    usuario_db.email = usuario_actualizado.email
+    usuario_db.rol = usuario_actualizado.rol
+
+    db.commit()
+    db.refresh(usuario_db)
+    return usuario_db
+
+# ELIMINAR
+@router.delete("/usuarios/{idusuario}")
+def eliminar_usuario(idusuario: int, db: Session = Depends(get_db)):
+    usuario_db = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
+    if not usuario_db:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    db.delete(usuario_db)
+    db.commit()
+    return {"message": "Usuario eliminado correctamente"}
