@@ -7,7 +7,7 @@ from utils.utils import hash_password
 from fastapi import status
 from utils.utils import verify_password
 from fastapi import BackgroundTasks
-from utils.jwt_handler import create_reset_token
+from utils.jwt_handler import create_reset_token, verify_reset_token
 # from utils.email_utils import send_reset_email
 import models
 
@@ -103,3 +103,45 @@ def login(email: str, password: str, db: Session = Depends(get_db)):
         "rol": usuario.rol
     }
 
+@router.post("/forgot-password")
+def forgot_password(email: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+
+    if not usuario:
+        # No revelamos si el correo existe o no (seguridad básica)
+        return {"mensaje": "Si el correo existe, se enviará un enlace para restablecer la contraseña."}
+
+    # Generar token de recuperación
+    token = create_reset_token({"sub": usuario.email})
+    reset_link = f"http://localhost:8000/reset-password?token={token}"
+
+    # En vez de enviar correo, mostramos el link en consola
+    print(f"\n[DEBUG] Enlace de restablecimiento de contraseña para {usuario.email}:")
+    print(reset_link, "\n")
+
+    return {"mensaje": "Si el correo existe, se enviará un enlace para restablecer la contraseña."}
+
+
+# -----------------------
+# RESTABLECER CONTRASEÑA
+# -----------------------
+@router.post("/reset-password")
+def reset_password(token: str, nueva_contrasena: str, db: Session = Depends(get_db)):
+    email = verify_reset_token(token)
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido o expirado"
+        )
+
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+
+    usuario.password = hash_password(nueva_contrasena)
+    db.commit()
+
+    return {"mensaje": "Contraseña actualizada correctamente"}

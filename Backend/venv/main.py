@@ -15,5 +15,5 @@ app.include_router(usuario.router)
 # Ruta base
 @app.get("/")
 def read_root():
-    return {"mensaje": "Bienvenido al repositorio académico Operación Calabaza"}
+    return {"mensaje": "Bienvenido al repositorio académico Mayorsearch"}
 
