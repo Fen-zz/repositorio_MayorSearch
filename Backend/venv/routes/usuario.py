@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models import Usuario
 from database import get_db
-from schemas import UsuarioCreate, UsuarioOut, UsuarioBase
+from schemas import UsuarioCreate, UsuarioOut, UsuarioBase, UsuarioUpdate
 from utils.utils import hash_password
 from fastapi import status
 from utils.utils import verify_password
@@ -54,17 +54,17 @@ def crear_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
 @router.put("/usuarios/{idusuario}", response_model=UsuarioOut)
 def actualizar_usuario(
     idusuario: int,
-    usuario_actualizado: UsuarioBase,
+    usuario_actualizado: UsuarioUpdate,
     db: Session = Depends(get_db)
 ):
     usuario_db = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
     if not usuario_db:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    usuario_db.nombreusuario = usuario_actualizado.nombreusuario
-    usuario_db.telefono = usuario_actualizado.telefono
-    usuario_db.email = usuario_actualizado.email
-    usuario_db.rol = usuario_actualizado.rol
+    # Actualiza solo los campos que hayan sido enviados
+    update_data = usuario_actualizado.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(usuario_db, key, value)
 
     db.commit()
     db.refresh(usuario_db)

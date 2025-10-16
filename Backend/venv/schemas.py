@@ -24,3 +24,11 @@ class UsuarioOut(UsuarioBase):
 
     class Config:
         orm_mode = True
+
+# ----- Esquema para actualización parcial -----
+class UsuarioUpdate(BaseModel):
+    nombreusuario: Optional[str] = None
+    telefono: Optional[str] = None
+    email: Optional[EmailStr] = None
+    rol: Optional[str] = None
+
