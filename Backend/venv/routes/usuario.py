@@ -4,6 +4,13 @@ from models import Usuario
 from database import get_db
 from schemas import UsuarioCreate, UsuarioOut, UsuarioBase
 from utils.utils import hash_password
+from fastapi import status
+from utils.utils import verify_password
+from fastapi import BackgroundTasks
+from utils.jwt_handler import create_reset_token
+# from utils.email_utils import send_reset_email
+import models
+
 
 router = APIRouter()
 
@@ -73,3 +80,26 @@ def eliminar_usuario(idusuario: int, db: Session = Depends(get_db)):
     db.delete(usuario_db)
     db.commit()
     return {"message": "Usuario eliminado correctamente"}
+
+# Comprobar autenticación básica
+@router.post("/login")
+def login(email: str, password: str, db: Session = Depends(get_db)):
+    """Autenticación básica de usuario."""
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    
+    if not verify_password(password, usuario.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Contraseña incorrecta"
+        )
+    
+    return {
+        "mensaje": f"Bienvenido {usuario.nombreusuario}",
+        "rol": usuario.rol
+    }
+

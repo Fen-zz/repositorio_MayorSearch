@@ -1,11 +1,13 @@
-# utils.py
-import bcrypt
+# utils/utils.py
+from passlib.context import CryptContext
+
+# Crear un contexto de encriptación con bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    """Cifra la contraseña con bcrypt."""
-    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    return hashed.decode('utf-8')
+    """Encripta una contraseña en texto plano."""
+    return pwd_context.hash(password)
 
-def verify_password(password: str, hashed_password: str) -> bool:
-    """Verifica si la contraseña coincide con el hash almacenado."""
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Compara una contraseña ingresada con su versión encriptada."""
+    return pwd_context.verify(plain_password, hashed_password)
