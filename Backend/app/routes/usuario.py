@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models import Usuario
-from database import get_db
-from schemas import UsuarioCreate, UsuarioOut, UsuarioBase, UsuarioUpdate
-from utils.utils import hash_password
+from app.models.usuario import Usuario
+from app.database import get_db
+from app.schemas.usuario import UsuarioCreate, UsuarioOut, UsuarioBase, UsuarioUpdate
+from app.utils.utils import hash_password
 from fastapi import status
-from utils.utils import verify_password
+from app.utils.utils import verify_password
 from fastapi import BackgroundTasks
-from utils.jwt_handler import create_reset_token, verify_reset_token
+from app.utils.jwt_handler import create_reset_token, verify_reset_token
 # from utils.email_utils import send_reset_email
-import models
+import app.models
 
 
 router = APIRouter()
