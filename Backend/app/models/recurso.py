@@ -18,3 +18,12 @@ class Recurso(Base):
 
     idarchivo = Column(Integer, ForeignKey("archivo.idarchivo", ondelete="SET NULL"), nullable=True)
     archivo = relationship("Archivo", backref="recursos", foreign_keys=[idarchivo])
+
+class RecursoAutor(Base):
+    __tablename__ = "recurso_autor"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recurso_id = Column(Integer, ForeignKey("recurso.idrecurso"))
+    autor_id = Column(Integer, ForeignKey("autor.idautor"))
+
+    autor = relationship("Autor", back_populates="recursos")

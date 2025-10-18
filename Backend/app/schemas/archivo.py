@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+
 class ArchivoOut(BaseModel):
     idarchivo: int
     nombreoriginal: Optional[str]
