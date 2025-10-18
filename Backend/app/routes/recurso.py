@@ -9,6 +9,7 @@ from app.models.archivo import Archivo
 from app.schemas.recurso import RecursoCreate, RecursoOut, RecursoUpdate
 from app.schemas.archivo import ArchivoOut
 from PyPDF2 import PdfReader
+from sqlalchemy import text
 
 UPLOAD_DIR = "uploads/recursos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -61,7 +62,7 @@ async def create_recurso(
     db.commit()
     db.refresh(nuevo_archivo)
 
-    # 👇 NUEVO: intentar extraer el texto del PDF
+    # intentar extraer el texto del PDF
     contenido_texto = None
     if nuevo_archivo.tipoarchivo == "application/pdf":
         try:
@@ -72,7 +73,7 @@ async def create_recurso(
                     texto += pagina.extract_text() or ""
                 contenido_texto = texto.strip()
         except Exception as e:
-            print(f"⚠️ Error extrayendo texto del PDF: {e}")
+            print(f" Error extrayendo texto del PDF: {e}")
 
     # Crear recurso y vincular IdArchivo
     nuevo_recurso = Recurso(
@@ -81,9 +82,9 @@ async def create_recurso(
         descripcion=descripcion,
         fechapublicacion=fechapublicacion or None,
         idioma=idioma,
-        ubicacion=meta["ruta"],  # opcional duplicado para compatibilidad
+        ubicacion=meta["ruta"],  
         idarchivo=nuevo_archivo.idarchivo,
-        contenidotexto=contenido_texto  # 👈 NUEVO
+        contenidotexto=contenido_texto  
     )
     db.add(nuevo_recurso)
     db.commit()
@@ -165,6 +166,26 @@ async def delete_recurso(recurso_id: int, db: Session = Depends(get_db)):
 async def listar_recursos(db: Session = Depends(get_db)):
     return db.query(Recurso).all()
 
+@router.get("/recursos/buscar", response_model=list[RecursoOut])
+def buscar_recursos(q: str, db: Session = Depends(get_db)):
+    resultados = db.execute(text("""
+        SELECT 
+            idrecurso,
+            titulo,
+            tiporecurso,
+            descripcion,
+            fechapublicacion,
+            idioma,
+            ubicacion,
+            creadofecha,
+            verificado,
+            contenidotexto
+        FROM recurso
+        WHERE contenidotexto ILIKE :q
+    """), {"q": f"%{q}%"}).mappings().all()
+
+    return resultados
+
 
 @router.get("/{recurso_id}", response_model=RecursoOut)
 async def obtener_recurso(recurso_id: int, db: Session = Depends(get_db)):
@@ -172,3 +193,4 @@ async def obtener_recurso(recurso_id: int, db: Session = Depends(get_db)):
     if not recurso:
         raise HTTPException(status_code=404, detail="Recurso no encontrado")
     return recurso
+
