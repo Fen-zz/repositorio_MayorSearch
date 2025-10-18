@@ -181,8 +181,8 @@ def buscar_recursos(q: str, db: Session = Depends(get_db)):
             verificado,
             contenidotexto
         FROM recurso
-        WHERE contenidotexto ILIKE :q
-    """), {"q": f"%{q}%"}).mappings().all()
+        WHERE tsv @@ plainto_tsquery('spanish', :q)
+    """), {"q": q}).mappings().all()
 
     return resultados
 
