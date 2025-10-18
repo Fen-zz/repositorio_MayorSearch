@@ -32,19 +32,12 @@ class RecursoUpdate(BaseModel):
     verificado: Optional[bool] = None
 
 
-# Mostrar recurso (salida)
-class RecursoOut(RecursoBase):
-    idrecurso: int
-    creadofecha: datetime
-
-    class Config:
-        orm_mode = True
-
-# inclusion de archivo
 class RecursoOut(RecursoBase):
     idrecurso: int
     creadofecha: datetime
     archivo: Optional[ArchivoOut] = None
+    contenidotexto: Optional[str] = None
 
     class Config:
         orm_mode = True
+

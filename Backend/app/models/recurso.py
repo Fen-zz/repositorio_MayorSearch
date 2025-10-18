@@ -9,6 +9,7 @@ class Recurso(Base):
     titulo = Column(String(200), nullable=False)
     tiporecurso = Column(String(50), nullable=False)
     descripcion = Column(Text)
+    contenidotexto = Column(Text)
     fechapublicacion = Column(Date)
     idioma = Column(String(50))
     ubicacion = Column(String(200))
