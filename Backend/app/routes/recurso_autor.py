@@ -19,3 +19,25 @@ def vincular_autor_recurso(vinculo: RecursoAutorCreate, db: Session = Depends(ge
     db.commit()
     db.refresh(nuevo)
     return nuevo
+
+@router.get("/", response_model=list[RecursoAutorOut])
+def listar_vinculos(db: Session = Depends(get_db)):
+    return db.query(RecursoAutor).all()
+
+
+@router.get("/{id}", response_model=RecursoAutorOut)
+def obtener_vinculo(id: int, db: Session = Depends(get_db)):
+    vinculo = db.query(RecursoAutor).filter_by(id=id).first()
+    if not vinculo:
+        raise HTTPException(status_code=404, detail="Vínculo no encontrado")
+    return vinculo
+
+@router.delete("/{id}", status_code=204)
+def eliminar_vinculo(id: int, db: Session = Depends(get_db)):
+    vinculo = db.query(RecursoAutor).filter_by(id=id).first()
+    if not vinculo:
+        raise HTTPException(status_code=404, detail="Vínculo no encontrado")
+
+    db.delete(vinculo)
+    db.commit()
+    return
