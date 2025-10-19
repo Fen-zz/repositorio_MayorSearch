@@ -20,3 +20,6 @@ class Recurso(Base):
     archivo = relationship("Archivo", backref="recursos", foreign_keys=[idarchivo])
 
     recurso_autores = relationship("RecursoAutor", back_populates="recurso")
+    recurso_temas = relationship("RecursoTema", back_populates="recurso")
+
+
