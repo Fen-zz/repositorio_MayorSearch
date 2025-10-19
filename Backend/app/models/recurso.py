@@ -21,5 +21,6 @@ class Recurso(Base):
 
     recurso_autores = relationship("RecursoAutor", back_populates="recurso")
     recurso_temas = relationship("RecursoTema", back_populates="recurso")
+    recurso_etiquetas = relationship("RecursoEtiqueta", back_populates="recurso")
 
 

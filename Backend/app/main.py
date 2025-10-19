@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from app.database import Base, engine
-from app.models import usuario, autor, recurso_autor, recurso, tema, recurso_tema
+from app.models import usuario, autor, recurso_autor, recurso, tema, recurso_tema, etiqueta, recurso_etiqueta
 from app.routes import usuario as usuario_routes  
 from app.routes import recurso as recurso_routes
 from app.routes import autor as autor_routes
 from app.routes import recurso_autor as recurso_autor_routes
 from app.routes import tema as tema_routes
 from app.routes import recurso_tema as recurso_tema_routes
+from app.routes import etiqueta as etiqueta_routes
+from app.routes import recurso_etiqueta as recurso_etiqueta_routes
 
 Base.metadata.create_all(bind=engine)
 
@@ -18,6 +20,8 @@ app.include_router(autor_routes.router)
 app.include_router(recurso_autor_routes.router)
 app.include_router(tema_routes.router)
 app.include_router(recurso_tema_routes.router)
+app.include_router(etiqueta_routes.router)
+app.include_router(recurso_etiqueta_routes.router)
 
 @app.get("/")
 def read_root():
