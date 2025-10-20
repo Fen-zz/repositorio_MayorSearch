@@ -10,7 +10,7 @@ class Usuario(Base):
     nombreusuario = Column(String(100), nullable=False)
     telefono = Column(String(20))
     email = Column(String(150), unique=True, nullable=False)
-    password = Column(String(200), nullable=False)
+    password = Column(String(200), nullable=True)
     proveedor = Column(String(50))
     idproveedor = Column(String(100))
     codigoestudiantil = Column(String(50))
@@ -18,5 +18,5 @@ class Usuario(Base):
     fechacreacion = Column(DateTime, default=datetime.utcnow) 
 
     __table_args__ = (
-        CheckConstraint("Rol IN ('normal','docente','admin')", name="rol_check"),
+        CheckConstraint("rol IN ('normal','docente','admin')", name="rol_check"),
     )

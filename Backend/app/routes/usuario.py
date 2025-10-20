@@ -10,6 +10,7 @@ from fastapi import BackgroundTasks
 from app.utils.jwt_handler import create_reset_token, verify_reset_token
 # from utils.email_utils import send_reset_email
 import app.models
+import os
 
 from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
@@ -107,16 +108,21 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
 @router.post("/login/google")
 def login_google(id_token_str: str = Form(...), db: Session = Depends(get_db)):
     CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    print("\n[DEBUG] CLIENT_ID =", CLIENT_ID)
+    print("[DEBUG] id_token_str (primeros 20 chars):", id_token_str[:20])
     if not CLIENT_ID:
         raise HTTPException(status_code=500, detail="Google client ID no configurado en el servidor")
 
     try:
         # Verificar token de Google (también comprueba que el token esté firmado por Google)
         payload = id_token.verify_oauth2_token(id_token_str, grequests.Request(), CLIENT_ID)
+        print("[DEBUG] Payload verificado:", payload)
 
         email = payload.get("email")
         nombre = payload.get("name", email.split("@")[0])
         sub = payload.get("sub")  # id único de Google
+
+        print("[DEBUG] Usuario:", email, " | Nombre:", nombre)
 
         if not email:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido: sin email")
