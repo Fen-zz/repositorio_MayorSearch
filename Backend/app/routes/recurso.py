@@ -1,7 +1,7 @@
 import os
 import shutil
 from uuid import uuid4
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.recurso import Recurso
@@ -9,7 +9,10 @@ from app.models.archivo import Archivo
 from app.schemas.recurso import RecursoCreate, RecursoOut, RecursoUpdate
 from app.schemas.archivo import ArchivoOut
 from PyPDF2 import PdfReader
-from sqlalchemy import text
+from sqlalchemy.sql import text
+from datetime import date
+from sqlalchemy.orm import Session
+from app.database import get_db
 
 UPLOAD_DIR = "uploads/recursos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -166,9 +169,71 @@ async def delete_recurso(recurso_id: int, db: Session = Depends(get_db)):
 async def listar_recursos(db: Session = Depends(get_db)):
     return db.query(Recurso).all()
 
-@router.get("/recursos/buscar", response_model=list[RecursoOut])
-def buscar_recursos(q: str, db: Session = Depends(get_db)):
-    resultados = db.execute(text("""
+@router.get("/recursos/buscar", response_model=dict)
+def buscar_recursos(
+    q: str = None,
+    tiporecurso: str = None,
+    idioma: str = None,
+    verificado: bool = None,
+    fecha_inicio: date = Query(None),
+    fecha_fin: date = Query(None),
+    ubicacion: str = None,
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db)
+):
+    base_conditions = " WHERE 1=1"
+    params = {}
+
+    # -------- 🔍 Filtros de búsqueda --------
+    if q:
+        base_conditions += """
+            AND (
+                tsv @@ plainto_tsquery('spanish', :q)
+                OR titulo ILIKE :q_ilike
+                OR descripcion ILIKE :q_ilike
+            )
+        """
+        params["q"] = q
+        params["q_ilike"] = f"%{q}%"
+
+    if tiporecurso:
+        base_conditions += " AND tiporecurso ILIKE :tiporecurso"
+        params["tiporecurso"] = f"%{tiporecurso}%"
+
+    if idioma:
+        base_conditions += " AND idioma ILIKE :idioma"
+        params["idioma"] = f"%{idioma}%"
+
+    if verificado is not None:
+        base_conditions += " AND verificado = :verificado"
+        params["verificado"] = verificado
+
+    if fecha_inicio and fecha_fin:
+        base_conditions += " AND fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin"
+        params["fecha_inicio"] = fecha_inicio
+        params["fecha_fin"] = fecha_fin
+    elif fecha_inicio:
+        base_conditions += " AND fechapublicacion >= :fecha_inicio"
+        params["fecha_inicio"] = fecha_inicio
+    elif fecha_fin:
+        base_conditions += " AND fechapublicacion <= :fecha_fin"
+        params["fecha_fin"] = fecha_fin
+
+    if ubicacion:
+        base_conditions += " AND ubicacion ILIKE :ubicacion"
+        params["ubicacion"] = f"%{ubicacion}%"
+
+    # -------- 📊 Contar resultados --------
+    count_query = f"SELECT COUNT(*) FROM recurso {base_conditions}"
+    total = db.execute(text(count_query), params).scalar()
+
+    # -------- 🧠 Construir ranking solo si hay q --------
+    rank_sql = "0 AS rank"
+    if q:
+        rank_sql = "ts_rank_cd(tsv, plainto_tsquery('spanish', :q)) AS rank"
+
+    query = f"""
         SELECT 
             idrecurso,
             titulo,
@@ -179,12 +244,31 @@ def buscar_recursos(q: str, db: Session = Depends(get_db)):
             ubicacion,
             creadofecha,
             verificado,
-            contenidotexto
+            contenidotexto,
+            {rank_sql}
         FROM recurso
-        WHERE tsv @@ plainto_tsquery('spanish', :q)
-    """), {"q": q}).mappings().all()
+        {base_conditions}
+    """
 
-    return resultados
+    # Orden dinámico
+    if q:
+        query += " ORDER BY rank DESC, creadofecha DESC"
+    else:
+        query += " ORDER BY creadofecha DESC"
+
+    query += " LIMIT :limit OFFSET :offset"
+    params["limit"] = limit
+    params["offset"] = offset
+
+    resultados = db.execute(text(query), params).mappings().all()
+
+    # -------- 🧾 Devolver respuesta paginada --------
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "resultados": resultados
+    }
 
 
 @router.get("/{recurso_id}", response_model=RecursoOut)
