@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from app.models.usuario import Usuario
 from app.database import get_db
@@ -10,6 +10,9 @@ from fastapi import BackgroundTasks
 from app.utils.jwt_handler import create_reset_token, verify_reset_token
 # from utils.email_utils import send_reset_email
 import app.models
+
+from google.oauth2 import id_token
+from google.auth.transport import requests as grequests
 
 
 router = APIRouter()
@@ -83,25 +86,80 @@ def eliminar_usuario(idusuario: int, db: Session = Depends(get_db)):
 
 # Comprobar autenticación básica
 @router.post("/login")
-def login(email: str, password: str, db: Session = Depends(get_db)):
-    """Autenticación básica de usuario."""
+def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.email == email).first()
     if not usuario:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
     if not verify_password(password, usuario.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Contraseña incorrecta"
-        )
-    
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Contraseña incorrecta")
+
+    # Generar token JWT reutilizando la función existente
+    token_data = {"sub": usuario.email, "rol": usuario.rol}
+    access_token = create_reset_token(token_data)
+
     return {
-        "mensaje": f"Bienvenido {usuario.nombreusuario}",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "usuario": usuario.nombreusuario,
         "rol": usuario.rol
     }
+
+@router.post("/login/google")
+def login_google(id_token_str: str = Form(...), db: Session = Depends(get_db)):
+    CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    if not CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google client ID no configurado en el servidor")
+
+    try:
+        # Verificar token de Google (también comprueba que el token esté firmado por Google)
+        payload = id_token.verify_oauth2_token(id_token_str, grequests.Request(), CLIENT_ID)
+
+        email = payload.get("email")
+        nombre = payload.get("name", email.split("@")[0])
+        sub = payload.get("sub")  # id único de Google
+
+        if not email:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido: sin email")
+
+        # Buscar usuario existente por email
+        usuario = db.query(Usuario).filter(Usuario.email == email).first()
+
+        if not usuario:
+            # Crear nuevo usuario proveniente de Google
+            usuario = Usuario(
+                nombreusuario=nombre,
+                email=email,
+                proveedor="google",
+                idproveedor=sub,
+                rol="normal"
+            )
+            db.add(usuario)
+            db.commit()
+            db.refresh(usuario)
+        else:
+            # Si el usuario existe y no tiene proveedor registrado, podemos enlazarlo a Google
+            if not usuario.proveedor:
+                usuario.proveedor = "google"
+                usuario.idproveedor = sub
+                db.commit()
+                db.refresh(usuario)
+            # si ya tiene proveedor distinto, lo dejamos como está (no sobrescribimos password)
+
+        # Generar JWT local (tu token de sesión)
+        token_data = {"sub": usuario.email, "rol": usuario.rol}
+        access_token = create_reset_token(token_data)
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "usuario": usuario.nombreusuario,
+            "rol": usuario.rol
+        }
+
+    except ValueError:
+        # token inválido / expirado
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de Google inválido o expirado")
+
 
 @router.post("/forgot-password")
 def forgot_password(email: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):

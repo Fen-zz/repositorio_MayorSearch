@@ -1,3 +1,9 @@
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+print("GOOGLE_CLIENT_ID cargado:", os.getenv("GOOGLE_CLIENT_ID"))
+
 from fastapi import FastAPI
 from app.database import Base, engine
 from app.models import usuario, autor, recurso_autor, recurso, tema, recurso_tema, etiqueta, recurso_etiqueta
