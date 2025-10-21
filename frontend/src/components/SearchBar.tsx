@@ -26,7 +26,7 @@ export default function SearchBar({
       {/* Barra de búsqueda */}
       <form
         onSubmit={handleSubmit}
-        className="flex items-center w-3/4 max-w-3xl bg-white border rounded-2xl shadow-sm px-4 py-2"
+        className="flex items-center w-3/4 max-w-3xl bg-white border border-gray-100 rounded-2xl shadow-sm px-4 py-2"
       >
         <Search className="text-gray-500 mr-2 w-5 h-5" />
         <input
@@ -45,15 +45,17 @@ export default function SearchBar({
         </button>
         <button
           type="submit"
-          className="ml-3 px-4 py-2 bg-[#0C4A7B] text-white rounded-md font-semibold hover:opacity-90 transition"
+          className="ml-3 w-10 h-10 bg-[#0C4A7B] text-white rounded-full flex items-center justify-center hover:opacity-90 transition"
+          aria-label="Buscar"
         >
-          Buscar
+          <Search className="w-5 h-5" />
         </button>
+
       </form>
 
       {/* Filtros desplegables */}
       {showFilters && (
-        <div className="mt-4 p-4 w-3/4 max-w-3xl bg-white rounded-xl shadow-md border">
+        <div className="mt-4 p-4 w-3/4 max-w-3xl bg-white rounded-xl shadow-md border border-gray-100">
           <h3 className="font-semibold mb-2 text-blue-800">Filtros de búsqueda</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm text-gray-700">
             <div>

@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/login";
 import Home from "./pages/Home";
+import Root from "./pages/Root";
 
 function App() {
   return (
@@ -14,7 +15,7 @@ function App() {
         <Route path="/home" element={<Home />} />
 
         {/* Ruta raíz temporal (puede redirigir luego al login o home) */}
-        <Route path="/" element={<div>🏠 Bienvenido a MayorSearch</div>} />
+        <Route path="/" element={<Root />} />
       </Routes>
     </BrowserRouter>
   );

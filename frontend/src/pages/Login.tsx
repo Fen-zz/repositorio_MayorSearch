@@ -21,7 +21,7 @@ export default function Login() {
       window.location.href = "/";
     } catch (error) {
       console.error("Error en login manual:", error);
-      alert("Credenciales inválidas 😩");
+      alert("Credenciales inválidas");
     }
   };
 
