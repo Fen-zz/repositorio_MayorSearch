@@ -67,11 +67,11 @@ export default function Login() {
             </div>
 
             <div className="flex items-center my-6">
-              <hr className="flex-grow border-gray-600" />
+              <hr className="grow border-gray-600" />
               <span className="mx-2 text-gray-400 text-sm">
                 O accede a través de:
               </span>
-              <hr className="flex-grow border-gray-600" />
+              <hr className="grow border-gray-600" />
             </div>
 
             {/* Botón de Google */}
