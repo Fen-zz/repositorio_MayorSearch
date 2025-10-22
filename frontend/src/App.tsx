@@ -2,19 +2,19 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/login";
 import Home from "./pages/Home";
-import Root from "./pages/Root";
+import Root from "./pages/Root"; // Componente que se muestra en "/"
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ruta principal (login) */}
+        {/* Ruta del Login */}
         <Route path="/login" element={<Login />} />
 
-        {/* Ruta del Home */}
+        {/* Ruta principal para usuarios logueados */}
         <Route path="/home" element={<Home />} />
 
-        {/* Ruta raíz temporal (puede redirigir luego al login o home) */}
+        {/* Ruta raíz, accesible para todos */}
         <Route path="/" element={<Root />} />
       </Routes>
     </BrowserRouter>

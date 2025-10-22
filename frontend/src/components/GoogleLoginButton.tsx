@@ -1,9 +1,11 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { googleLogin } from "../services/authService";
 import { useAuth } from "../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function GoogleLoginButton() {
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSuccess = async (credentialResponse: any) => {
     console.log("Respuesta de Google:", credentialResponse);
@@ -29,7 +31,7 @@ export default function GoogleLoginButton() {
       console.log("Rol guardado en contexto:", resp.data.rol);
 
       alert("Inicio de sesión exitoso ✅");
-      window.location.href = "/";
+      navigate("/Home");
     } catch (error) {
       console.error("Error en el login con Google:", error);
       alert("Error al iniciar sesión con Google 😩");

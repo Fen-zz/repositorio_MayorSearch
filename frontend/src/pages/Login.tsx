@@ -2,28 +2,32 @@ import { useState } from "react";
 import GoogleLoginButton from "../components/googleLoginButton";
 import { useAuth } from "../hooks/useAuth";
 import { loginManual } from "../services/authService";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleManualLogin = async () => {
-    if (!email || !password) {
-      alert("Por favor completa ambos campos.");
-      return;
-    }
+  if (!email || !password) {
+    alert("Por favor completa ambos campos.");
+    return;
+  }
 
-    try {
-      const resp = await loginManual(email, password);
-      login(resp.data.usuario, resp.data.rol, resp.data.access_token);
-      alert("Inicio de sesión exitoso ✅");
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Error en login manual:", error);
-      alert("Credenciales inválidas");
-    }
+  try {
+    const resp = await loginManual(email, password);
+    login(resp.data.usuario, resp.data.rol, resp.data.access_token);
+    alert("Inicio de sesión exitoso ✅");
+    navigate("/home");
+  } catch (error) {
+    console.error("Error en login manual:", error);
+    alert("Credenciales inválidas");
+  }
   };
+
 
   return (
     <div className="min-h-screen bg-[#081B33] flex flex-col">

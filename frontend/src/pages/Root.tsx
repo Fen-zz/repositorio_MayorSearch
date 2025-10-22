@@ -1,8 +1,13 @@
 //import React from "react";
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react";
+import { Facebook, Instagram, Mail, MapPin, Phone} from "lucide-react";
+//import { useAuth } from "../hooks/useAuth";
+// import { Navigate } from "react-router-dom";
+import UserMenu from "../components/UserMenu";
 
 export default function HomeRoot() {
+  
+  //const { user, isAuthenticated, logout } = useAuth();
   return (
     <div className="min-h-screen w-full bg-white text-blue-50">
       {/* Header */}
@@ -38,8 +43,9 @@ export default function HomeRoot() {
             <a className="text-blue-700/90" href="#contacto">
               CONTÁCTANOS
             </a>
-            <a className="text-blue-700/90" href="#">REGISTRARSE</a>
-            <a className="text-blue-700/90" href="#">INICIAR SESIÓN</a>
+            <div className="hidden md:flex items-center gap-6 text-sm">
+              <UserMenu />
+            </div>
           </div>
         </div>
       </header>
