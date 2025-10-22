@@ -145,7 +145,7 @@ export default function Register() {
             <GoogleLoginButton />
 
             <p className="text-sm text-center mt-6 text-gray-400">
-              ¿Ya tienes una cuenta?{" "}
+            <Link to="/login"> ¿Ya tienes una cuenta?{" "}</Link>
               <span
                 onClick={() => navigate("/login")}
                 className="text-[#5C8DFF] hover:underline cursor-pointer"

@@ -90,7 +90,7 @@ export default function Login() {
                 Recordar usuario
               </label>
               <a href="#" className="text-[#5C8DFF] hover:underline">
-                ¿Olvidó su contraseña?
+                <Link to="/forgot-password">¿Olvidó su contraseña?</Link>
               </a>
             </div>
 

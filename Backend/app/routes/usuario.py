@@ -8,7 +8,12 @@ from fastapi import status
 from app.utils.utils import verify_password
 from fastapi import BackgroundTasks
 from app.utils.jwt_handler import create_reset_token, verify_reset_token
-# from utils.email_utils import send_reset_email
+
+from email.message import EmailMessage
+import aiosmtplib
+from fastapi import APIRouter, Depends, BackgroundTasks
+import resend
+
 import app.models
 import os
 
@@ -17,6 +22,7 @@ from google.auth.transport import requests as grequests
 
 
 router = APIRouter()
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 # -----------------------
 # LISTAR USUARIOS
@@ -167,21 +173,49 @@ def login_google(id_token_str: str = Form(...), db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de Google inválido o expirado")
 
 
+# -----------------------
+# OLVIDÓ SU CONTRASEÑA
+# -----------------------
+
 @router.post("/forgot-password")
-def forgot_password(email: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def forgot_password(email: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.email == email).first()
 
+    # No revelar existencia del usuario
     if not usuario:
-        # No revelamos si el correo existe o no (seguridad básica)
         return {"mensaje": "Si el correo existe, se enviará un enlace para restablecer la contraseña."}
 
-    # Generar token de recuperación
+    # Crear token de recuperación
     token = create_reset_token({"sub": usuario.email})
-    reset_link = f"http://localhost:8000/reset-password?token={token}"
+    reset_link = f"http://localhost:5173/reset-password?token={token}"
 
-    # En vez de enviar correo, mostramos el link en consola
-    print(f"\n[DEBUG] Enlace de restablecimiento de contraseña para {usuario.email}:")
-    print(reset_link, "\n")
+    # DEBUG
+    print(f"\n[DEBUG] Enlace de restablecimiento para {usuario.email}: {reset_link}\n")
+
+    # Remitente (usa Resend o tu Gmail)
+    from_email = os.getenv("EMAIL_SENDER") or "onboarding@resend.dev"
+
+    # Envío del correo en background
+    async def send_email():
+        try:
+            # ⚠️ Aquí quitamos el 'await' porque resend.Emails.send() es síncrono
+            resend.Emails.send({
+                "from": from_email,
+                "to": usuario.email,
+                "subject": "Recupera tu contraseña - MayorSearch",
+                "html": f"""
+                    <p>Hola {usuario.nombreusuario},</p>
+                    <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+                    <p><a href="{reset_link}">{reset_link}</a></p>
+                    <p>Si no solicitaste este cambio, ignora este mensaje.</p>
+                    <p>Atentamente,<br>El equipo de MayorSearch.</p>
+                """
+            })
+            print(f"[EMAIL] ✅ Enviado correctamente a {usuario.email} (from: {from_email})")
+        except Exception as e:
+            print(f"[ERROR EMAIL] ❌ No se pudo enviar a {usuario.email}: {e}")
+
+    background_tasks.add_task(send_email)
 
     return {"mensaje": "Si el correo existe, se enviará un enlace para restablecer la contraseña."}
 
@@ -190,22 +224,29 @@ def forgot_password(email: str, background_tasks: BackgroundTasks, db: Session =
 # RESTABLECER CONTRASEÑA
 # -----------------------
 @router.post("/reset-password")
-def reset_password(token: str, nueva_contrasena: str, db: Session = Depends(get_db)):
+async def reset_password(data: dict, db: Session = Depends(get_db)):
+    """
+    Espera un JSON del tipo:
+    {
+        "token": "...",
+        "nueva_contrasena": "..."
+    }
+    """
+    token = data.get("token")
+    nueva_contrasena = data.get("nueva_contrasena")
+
+    if not token or not nueva_contrasena:
+        raise HTTPException(status_code=400, detail="Faltan datos para restablecer la contraseña")
+
     email = verify_reset_token(token)
     if not email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Token inválido o expirado"
-        )
+        raise HTTPException(status_code=400, detail="Token inválido o expirado")
 
     usuario = db.query(Usuario).filter(Usuario.email == email).first()
     if not usuario:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
-        )
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     usuario.password = hash_password(nueva_contrasena)
     db.commit()
 
-    return {"mensaje": "Contraseña actualizada correctamente"}
+    return {"mensaje": "✅ Contraseña actualizada correctamente. Ya puedes iniciar sesión."}

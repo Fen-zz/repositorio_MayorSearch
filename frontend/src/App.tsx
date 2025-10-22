@@ -4,6 +4,8 @@ import Login from "./pages/login";
 import Home from "./pages/Home";
 import Root from "./pages/Root"; // Componente que se muestra en "/"
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -20,6 +22,12 @@ function App() {
 
         {/* Ruta del Registro */}
         <Route path="/register" element={<Register />} />
+
+        {/* Ruta del Olvido */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Ruta del Resset */}
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   );
