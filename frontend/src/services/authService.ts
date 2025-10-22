@@ -16,3 +16,22 @@ export const loginManual = (email: string, password: string) => {
   // 👇 aquí está el cambio importante
   return axios.post(`${API_URL}/login`, formData);
 };
+
+import api from "./api";
+
+// register conexión
+// 🧩 Aquí ajustamos los nombres exactamente como el backend espera
+export const registerManual = (
+  nombreusuario: string,
+  email: string,
+  password: string
+) => {
+  return api.post("/usuarios", {
+    nombreusuario,
+    email,
+    password,
+    telefono: "",        // opcional
+    proveedor: "manual", // para dejarlo documentado
+    rol: "normal"        // por defecto
+  });
+};

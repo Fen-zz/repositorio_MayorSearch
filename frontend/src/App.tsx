@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/login";
 import Home from "./pages/Home";
 import Root from "./pages/Root"; // Componente que se muestra en "/"
+import Register from "./pages/Register";
 
 function App() {
   return (
@@ -16,6 +17,9 @@ function App() {
 
         {/* Ruta raíz, accesible para todos */}
         <Route path="/" element={<Root />} />
+
+        {/* Ruta del Registro */}
+        <Route path="/register" element={<Register />} />
       </Routes>
     </BrowserRouter>
   );

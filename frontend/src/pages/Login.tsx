@@ -3,6 +3,7 @@ import GoogleLoginButton from "../components/googleLoginButton";
 import { useAuth } from "../hooks/useAuth";
 import { loginManual } from "../services/authService";
 import { useNavigate } from "react-router-dom";
+import { Link } from 'react-router-dom';
 
 
 export default function Login() {
@@ -39,11 +40,11 @@ export default function Login() {
         </div>
 
         <ul className="flex items-center gap-8 text-sm">
-          <li className="hover:text-white cursor-pointer">INICIO</li>
+          <li className="hover:text-white cursor-pointer"><Link to="/">INICIO</Link></li>
           <li className="hover:text-white cursor-pointer">RECURSOS ⌄</li>
           <li className="hover:text-white cursor-pointer">AUTORES ⌄</li>
-          <li className="hover:text-white cursor-pointer">CONTÁCTANOS</li>
-          <li className="hover:text-white cursor-pointer">REGISTRARSE</li>
+          <li className="hover:text-white cursor-pointer"><Link to="#contacto">CONTÁCTANOS</Link></li>
+          <li className="hover:text-white cursor-pointer"><Link to="/register">REGISTRARSE</Link></li>
           <li className="text-white font-semibold cursor-pointer">
             INICIAR SESIÓN
           </li>
