@@ -185,7 +185,7 @@ def buscar_recursos(
     base_conditions = " WHERE 1=1"
     params = {}
 
-    # -------- 🔍 Filtros de búsqueda --------
+    # -------- Filtros de búsqueda --------
     if q:
         base_conditions += """
             AND (
@@ -224,11 +224,11 @@ def buscar_recursos(
         base_conditions += " AND ubicacion ILIKE :ubicacion"
         params["ubicacion"] = f"%{ubicacion}%"
 
-    # -------- 📊 Contar resultados --------
+    # -------- Contar resultados --------
     count_query = f"SELECT COUNT(*) FROM recurso {base_conditions}"
     total = db.execute(text(count_query), params).scalar()
 
-    # -------- 🧠 Construir ranking solo si hay q --------
+    # -------- Construir ranking solo si hay q --------
     rank_sql = "0 AS rank"
     if q:
         rank_sql = "ts_rank_cd(tsv, plainto_tsquery('spanish', :q)) AS rank"
@@ -262,7 +262,7 @@ def buscar_recursos(
 
     resultados = db.execute(text(query), params).mappings().all()
 
-    # -------- 🧾 Devolver respuesta paginada --------
+    # -------- Devolver respuesta paginada --------
     return {
         "total": total,
         "limit": limit,
