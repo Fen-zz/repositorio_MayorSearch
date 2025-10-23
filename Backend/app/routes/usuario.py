@@ -116,62 +116,71 @@ def login_google(id_token_str: str = Form(...), db: Session = Depends(get_db)):
     CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     print("\n[DEBUG] CLIENT_ID =", CLIENT_ID)
     print("[DEBUG] id_token_str (primeros 20 chars):", id_token_str[:20])
+
     if not CLIENT_ID:
         raise HTTPException(status_code=500, detail="Google client ID no configurado en el servidor")
 
     try:
-        # Verificar token de Google (también comprueba que el token esté firmado por Google)
-        payload = id_token.verify_oauth2_token(id_token_str, grequests.Request(), CLIENT_ID)
+        # ✅ Verificar token de Google con margen de 5 segundos
+        payload = id_token.verify_oauth2_token(
+            id_token_str,
+            grequests.Request(),
+            CLIENT_ID,
+            clock_skew_in_seconds=5  # <-- acepta hasta 5 seg. de desfase
+        )
         print("[DEBUG] Payload verificado:", payload)
 
-        email = payload.get("email")
-        nombre = payload.get("name", email.split("@")[0])
-        sub = payload.get("sub")  # id único de Google
+    except ValueError as e:
+        # Token inválido / usado demasiado pronto
+        print("Error verificando token:", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token de Google inválido o usado demasiado pronto: {e}"
+        )
 
-        print("[DEBUG] Usuario:", email, " | Nombre:", nombre)
+    # Extraer info del usuario
+    email = payload.get("email")
+    nombre = payload.get("name", email.split("@")[0])
+    sub = payload.get("sub")  # ID único de Google
 
-        if not email:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido: sin email")
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token inválido: sin email")
 
-        # Buscar usuario existente por email
-        usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    print("[DEBUG] Usuario:", email, "| Nombre:", nombre)
 
-        if not usuario:
-            # Crear nuevo usuario proveniente de Google
-            usuario = Usuario(
-                nombreusuario=nombre,
-                email=email,
-                proveedor="google",
-                idproveedor=sub,
-                rol="normal"
-            )
-            db.add(usuario)
+    # Buscar usuario en DB
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+
+    if not usuario:
+        # Crear nuevo usuario proveniente de Google
+        usuario = Usuario(
+            nombreusuario=nombre,
+            email=email,
+            proveedor="google",
+            idproveedor=sub,
+            rol="normal"
+        )
+        db.add(usuario)
+        db.commit()
+        db.refresh(usuario)
+    else:
+        # Enlazar proveedor si no existía
+        if not usuario.proveedor:
+            usuario.proveedor = "google"
+            usuario.idproveedor = sub
             db.commit()
             db.refresh(usuario)
-        else:
-            # Si el usuario existe y no tiene proveedor registrado, podemos enlazarlo a Google
-            if not usuario.proveedor:
-                usuario.proveedor = "google"
-                usuario.idproveedor = sub
-                db.commit()
-                db.refresh(usuario)
-            # si ya tiene proveedor distinto, lo dejamos como está (no sobrescribimos password)
 
-        # Generar JWT local (tu token de sesión)
-        token_data = {"sub": usuario.email, "rol": usuario.rol}
-        access_token = create_reset_token(token_data)
+    # Generar JWT local
+    token_data = {"sub": usuario.email, "rol": usuario.rol}
+    access_token = create_reset_token(token_data)
 
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "usuario": usuario.nombreusuario,
-            "rol": usuario.rol
-        }
-
-    except ValueError:
-        # token inválido / expirado
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de Google inválido o expirado")
-
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "usuario": usuario.nombreusuario,
+        "rol": usuario.rol
+    }
 
 # -----------------------
 # OLVIDÓ SU CONTRASEÑA
