@@ -172,50 +172,58 @@ async def listar_recursos(db: Session = Depends(get_db)):
 
 @router.get("/recursos/buscar", response_model=dict)
 def buscar_recursos(
-    q: str = None,
-    tiporecurso: str = None,
-    idioma: str = None,
-    etiquetas: str = None,
-    fecha: str = None,
-    verificado: bool = None,
-    fecha_inicio: date = Query(None),
-    fecha_fin: date = Query(None),
-    ubicacion: str = None,
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    q: str = Query(None),
+    tiporecurso: str = Query(None),
+    idioma: str = Query(None),
+    verificado: bool = Query(None),
+    fecha_inicio: str = Query(None),
+    fecha_fin: str = Query(None),
+    ubicacion: str = Query(None),
+    etiquetas: str = Query(None),
+    fecha: str = Query(None),
+    limit: int = Query(10),
+    offset: int = Query(0),
     db: Session = Depends(get_db)
 ):
-    base_conditions = " WHERE 1=1"
+    base_query = """
+        SELECT r.*,
+            COALESCE(string_agg(DISTINCT a.nombreautor, ', '), '') AS autores,
+            COALESCE(string_agg(DISTINCT t.nombretema, ', '), '') AS temas,
+            COALESCE(string_agg(DISTINCT e.nombreetiqueta, ', '), '') AS etiquetas,
+            0 AS rank
+        FROM recurso r
+        LEFT JOIN recurso_autor ra ON r.idrecurso = ra.idrecurso
+        LEFT JOIN autor a ON ra.idautor = a.idautor
+        LEFT JOIN recurso_tema rt ON r.idrecurso = rt.idrecurso
+        LEFT JOIN tema t ON rt.idtema = t.idtema
+        LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso
+        LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta
+        WHERE 1=1
+    """
+
+    base_conditions = ""
+
+    # --- 🔍 Búsqueda general avanzada + Filtros combinados correctamente ---
+    search_parts = []
     params = {}
 
-    # 🧩 --- Búsqueda general avanzada ---
     if q:
-        # 1️⃣ Normalizar texto y separar mayúsculas pegadas
         q_normal = q.strip()
-        q_normal = re.sub(r'(?<!\s)([A-Z])', r' \1', q_normal).strip()  # KaleftSalazar → Kaleft Salazar
+        q_normal = re.sub(r'(?<!\s)([A-Z])', r' \1', q_normal).strip()
         q_nospaces = q_normal.replace(" ", "")
-
-        # 2️⃣ Convertir a tokens para búsqueda FTS robusta
         tokens = re.findall(r'\w+', q_normal.lower())
         q_ts = " & ".join([f"{t}:*" for t in tokens]) if tokens else ""
 
-        base_conditions += """
-            AND (
-                -- 🔹 Full Text Search clásico
+        search_parts.append("""
+            (
                 r.tsv @@ plainto_tsquery('spanish', :q)
                 OR (:q_ts <> '' AND r.tsv @@ to_tsquery('spanish', :q_ts))
-
-                -- 🔹 Comparaciones normales con ILIKE (sin acentos)
                 OR unaccent(lower(r.titulo)) ILIKE unaccent(lower(:q_ilike))
                 OR unaccent(lower(r.descripcion)) ILIKE unaccent(lower(:q_ilike))
                 OR unaccent(lower(r.contenidotexto)) ILIKE unaccent(lower(:q_ilike))
-
-                -- 🔹 Comparaciones sin espacios (clave para "hojadevida")
                 OR unaccent(lower(replace(r.titulo, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
                 OR unaccent(lower(replace(r.descripcion, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
                 OR unaccent(lower(replace(r.contenidotexto, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
-
-                -- 🔹 Autores: con y sin espacios
                 OR EXISTS (
                     SELECT 1 FROM recurso_autor ra2
                     JOIN autor a2 ON ra2.idautor = a2.idautor
@@ -226,7 +234,7 @@ def buscar_recursos(
                     )
                 )
             )
-        """
+        """)
 
         params.update({
             "q": q_normal,
@@ -235,27 +243,41 @@ def buscar_recursos(
             "q_ts": q_ts,
         })
 
-    # --- Filtros individuales ---
+    filter_parts = []
+
     if tiporecurso:
-        base_conditions += " AND r.tiporecurso ILIKE :tiporecurso"
+        filter_parts.append("r.tiporecurso ILIKE :tiporecurso")
         params["tiporecurso"] = f"%{tiporecurso}%"
 
     if idioma:
-        base_conditions += " AND r.idioma ILIKE :idioma"
+        filter_parts.append("r.idioma ILIKE :idioma")
         params["idioma"] = f"%{idioma}%"
 
-    # 🧩 Etiquetas (asignatura, tipo, nivel, etc.)
     if etiquetas:
         etiquetas_list = [e.strip() for e in etiquetas.split(",") if e.strip()]
         if etiquetas_list:
-            etiqueta_conditions = []
+            subquery = f"""
+                r.idrecurso IN (
+                    SELECT re_sub.idrecurso
+                    FROM recurso_etiqueta re_sub
+                    JOIN etiqueta e_sub ON re_sub.idetiqueta = e_sub.idetiqueta
+                    WHERE unaccent(lower(e_sub.nombreetiqueta)) IN ({', '.join([f':etq{i}' for i in range(len(etiquetas_list))])})
+                    GROUP BY re_sub.idrecurso
+                    HAVING COUNT(DISTINCT unaccent(lower(e_sub.nombreetiqueta))) = {len(etiquetas_list)}
+                )
+            """
+            filter_parts.append(subquery)
             for i, etq in enumerate(etiquetas_list):
-                key = f"etq{i}"
-                etiqueta_conditions.append(f"e.nombreetiqueta ILIKE :{key}")
-                params[key] = f"%{etq}%"
-            base_conditions += " AND (" + " OR ".join(etiqueta_conditions) + ")"
+                params[f"etq{i}"] = etq.lower()
 
-    # 🧩 Filtro simplificado por fecha (recientes / mes / año)
+    if verificado is not None:
+        filter_parts.append("r.verificado = :verificado")
+        params["verificado"] = verificado
+
+    if ubicacion:
+        filter_parts.append("r.ubicacion ILIKE :ubicacion")
+        params["ubicacion"] = f"%{ubicacion}%"
+
     if fecha:
         hoy = date.today()
         if "reciente" in fecha:
@@ -269,74 +291,44 @@ def buscar_recursos(
             fecha_inicio_calc = None
 
         if fecha_inicio_calc:
-            base_conditions += " AND r.fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin"
+            filter_parts.append("r.fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin")
             params["fecha_inicio"] = fecha_inicio_calc
             params["fecha_fin"] = hoy
 
-    if verificado is not None:
-        base_conditions += " AND r.verificado = :verificado"
-        params["verificado"] = verificado
+    # --- 💡 Aquí la clave: agrupar correctamente búsqueda + filtros ---
+    conditions = []
+    if search_parts:
+        conditions.append("(" + " OR ".join(search_parts) + ")")
+    if filter_parts:
+        conditions.append("(" + " AND ".join(filter_parts) + ")")
 
-    if ubicacion:
-        base_conditions += " AND r.ubicacion ILIKE :ubicacion"
-        params["ubicacion"] = f"%{ubicacion}%"
+    if conditions:
+        base_conditions += " AND " + " AND ".join(conditions)
 
-    # --- Contar resultados ---
-    count_query = f"""
-        SELECT COUNT(DISTINCT r.idrecurso)
-        FROM recurso r
-        LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso
-        LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta
-        {base_conditions}
-    """
-    total = db.execute(text(count_query), params).scalar()
-
-    # --- Ranking dinámico ---
-    rank_sql = "0 AS rank"
-    if q:
-        rank_sql = "ts_rank_cd(r.tsv, plainto_tsquery('spanish', :q)) AS rank"
-
-    # --- Query principal ---
-    query = f"""
-        SELECT 
-            r.idrecurso,
-            r.titulo,
-            r.tiporecurso,
-            r.descripcion,
-            r.fechapublicacion,
-            r.idioma,
-            r.ubicacion,
-            r.creadofecha,
-            r.verificado,
-            r.contenidotexto,
-            COALESCE(string_agg(DISTINCT a.nombreautor, ', '), '') AS autores,
-            COALESCE(string_agg(DISTINCT t.nombretema, ', '), '') AS temas,
-            COALESCE(string_agg(DISTINCT e.nombreetiqueta, ', '), '') AS etiquetas,
-            {rank_sql}
-        FROM recurso r
-        LEFT JOIN recurso_autor ra ON r.idrecurso = ra.idrecurso
-        LEFT JOIN autor a ON ra.idautor = a.idautor
-        LEFT JOIN recurso_tema rt ON r.idrecurso = rt.idrecurso
-        LEFT JOIN tema t ON rt.idtema = t.idtema
-        LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso
-        LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta
-        {base_conditions}
+    # ---------------- Consulta final ----------------
+    final_query = base_query + base_conditions + """
         GROUP BY r.idrecurso
+        ORDER BY r.creadofecha DESC
+        LIMIT :limit OFFSET :offset
     """
-
-    query += " ORDER BY rank DESC, r.creadofecha DESC LIMIT :limit OFFSET :offset"
     params["limit"] = limit
     params["offset"] = offset
 
-    resultados = db.execute(text(query), params).mappings().all()
+    rows = db.execute(text(final_query), params).fetchall()
+    resultados = [dict(row._mapping) for row in rows]
+
+    # Para mantener compatibilidad con tu antiguo response shape
+    # y con swagger que espera { total, limit, offset, resultados }
+    total_count = db.execute(text(
+        f"SELECT COUNT(DISTINCT r.idrecurso) FROM recurso r LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta WHERE 1=1 {base_conditions}"
+    ), params).scalar()
 
     return {
-        "total": total,
+        "total": total_count,
         "limit": limit,
         "offset": offset,
         "resultados": resultados
     }
-
 
 @router.get("/{recurso_id}", response_model=RecursoOut)
 async def obtener_recurso(recurso_id: int, db: Session = Depends(get_db)):

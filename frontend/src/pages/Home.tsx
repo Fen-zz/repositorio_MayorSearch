@@ -11,6 +11,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [lastQuery, setLastQuery] = useState<string>("");
 
+  // ✅ INICIO DE MODIFICACIÓN: manejo completo de etiquetas reales según lo indicado
   const mapFiltersToParams = (payload: Record<string, any>) => {
     const params: Record<string, any> = {};
 
@@ -19,35 +20,52 @@ export default function Home() {
       setLastQuery(payload.q);
     }
 
+    // Idioma directo (solo 'es' o 'en')
     if (payload.idioma) {
       const idi = payload.idioma.toLowerCase();
       if (idi.includes("inglés") || idi.includes("ingles")) params.idioma = "en";
       else if (idi.includes("español") || idi.includes("espanol")) params.idioma = "es";
-      else params.idioma = payload.idioma;
     }
 
-    if (payload.tipo) {
-      params.tiporecurso = payload.tipo;
-    }
-
+    // Todas las etiquetas deben coincidir exactamente con los valores reales en BD
     const etiquetas: string[] = [];
-    if (payload.asignatura) etiquetas.push(payload.asignatura);
-    if (payload.nivel) etiquetas.push(payload.nivel);
-    if (etiquetas.length > 0) params.etiquetas = etiquetas.join(",");
 
-    // Mapeo rápido de 'fecha' (mantén string para que backend lo interprete)
-    if (payload.fecha) {
-      const f = (payload.fecha as string).toLowerCase();
-      if (f.includes("recientes")) params.fecha = "recientes";
-      else if (f.includes("último mes") || f.includes("ultimo mes")) params.fecha = "ultimo_mes";
-      else if (f.includes("último año") || f.includes("ultimo año")) params.fecha = "ultimo_anio";
+    // Asignatura (usa etiquetas reales)
+    if (payload.asignatura) {
+      const asig = payload.asignatura.trim();
+      if (["teoría de grafos", "teoria de grafos", "análisis numérico", "analisis numerico"].includes(asig.toLowerCase())) {
+        etiquetas.push(asig);
+      }
     }
 
+    // Tipo de recurso (Libro, Artículo, Tesis, Monografía, Documento)
+    if (payload.tipo) {
+      const tipo = payload.tipo.trim();
+      if (["libro", "artículo", "articulo", "tesis", "monografía", "monografia", "documento"].includes(tipo.toLowerCase())) {
+        etiquetas.push(tipo);
+      }
+    }
+
+    // Nivel académico (Básico, Intermedio, Avanzado)
+    if (payload.nivel) {
+      const nivel = payload.nivel.trim();
+      if (["básico", "basico", "intermedio", "avanzado"].includes(nivel.toLowerCase())) {
+        etiquetas.push(nivel);
+      }
+    }
+
+    // Solo si hay etiquetas, se mandan al backend separadas por coma
+    if (etiquetas.length > 0) {
+      params.etiquetas = etiquetas.join(",");
+    }
+
+    // La fecha se omite (no aplica)
     params.limit = 10;
     params.offset = 0;
 
     return params;
   };
+  // ✅ FIN DE MODIFICACIÓN
 
   const handleSearch = async (payload: Record<string, any>) => {
     const isEmpty =
@@ -64,7 +82,6 @@ export default function Home() {
       console.log("✅ Resultados recibidos:", data);
       setResultados(data.resultados || []);
     } catch (err: any) {
-      // Mejor logging: si axios devuelve 422, muéstralo claro
       if (err?.response) {
         console.error("API error", err.response.status, err.response.data);
       } else {

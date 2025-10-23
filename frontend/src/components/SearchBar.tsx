@@ -8,6 +8,7 @@ type FiltersState = {
   nivel: string;
   fecha: string;
   idioma: string;
+  etiquetas: string; // 👈 campo para agrupar todas las etiquetas aplicables
 };
 
 type Props = {
@@ -27,15 +28,33 @@ export default function SearchBar({
     nivel: "",
     fecha: "",
     idioma: "",
+    etiquetas: "",
   });
 
+  // Función que maneja clics en filtros
   const handleFilterClick = (key: keyof FiltersState, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: prev[key] === value ? "" : value,
-    }));
+    setFilters((prev) => {
+      const newFilters = {
+        ...prev,
+        [key]: prev[key] === value ? "" : value,
+      };
+
+      // 🧠 Cada grupo se traduce a una etiqueta para el backend
+      const etiquetas = [
+        newFilters.asignatura,
+        newFilters.tipo,
+        newFilters.nivel,
+      ]
+        .filter((v) => v) // eliminamos vacíos
+        .join(","); // se envían separadas por coma al backend
+
+      newFilters.etiquetas = etiquetas;
+
+      return newFilters;
+    });
   };
 
+  // Envío del formulario
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch({
@@ -94,20 +113,24 @@ export default function SearchBar({
                 </p>
               ))}
             </div>
+
             <div>
               <strong>Tipo de recurso</strong>
-              {["Apuntes", "Libro/PDF", "Artículo"].map((x) => (
-                <p
-                  key={x}
-                  onClick={() => handleFilterClick("tipo", x)}
-                  className={`cursor-pointer hover:text-blue-700 ${
-                    filters.tipo === x ? "text-blue-700 font-semibold" : ""
-                  }`}
-                >
-                  {x}
-                </p>
-              ))}
+              {["Libro", "Artículo", "Tesis", "Monografía", "Documento", "Apuntes"].map(
+                (x) => (
+                  <p
+                    key={x}
+                    onClick={() => handleFilterClick("tipo", x)}
+                    className={`cursor-pointer hover:text-blue-700 ${
+                      filters.tipo === x ? "text-blue-700 font-semibold" : ""
+                    }`}
+                  >
+                    {x}
+                  </p>
+                )
+              )}
             </div>
+
             <div>
               <strong>Nivel académico</strong>
               {["Básico", "Intermedio", "Avanzado"].map((x) => (
@@ -122,6 +145,7 @@ export default function SearchBar({
                 </p>
               ))}
             </div>
+
             <div>
               <strong>Fecha</strong>
               {["Recientes", "Último mes", "Último año"].map((x) => (
@@ -136,6 +160,7 @@ export default function SearchBar({
                 </p>
               ))}
             </div>
+
             <div>
               <strong>Idioma</strong>
               {["Inglés", "Español", "Otro..."].map((x) => (
