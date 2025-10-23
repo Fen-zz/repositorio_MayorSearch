@@ -19,8 +19,8 @@ class Recurso(Base):
     idarchivo = Column(Integer, ForeignKey("archivo.idarchivo", ondelete="SET NULL"), nullable=True)
     archivo = relationship("Archivo", backref="recursos", foreign_keys=[idarchivo])
 
-    recurso_autores = relationship("RecursoAutor", back_populates="recurso")
-    recurso_temas = relationship("RecursoTema", back_populates="recurso")
-    recurso_etiquetas = relationship("RecursoEtiqueta", back_populates="recurso")
+    recurso_autores = relationship("RecursoAutor", back_populates="recurso", cascade="all, delete, delete-orphan")
+    recurso_temas = relationship("RecursoTema", back_populates="recurso", cascade="all, delete, delete-orphan")
+    recurso_etiquetas = relationship("RecursoEtiqueta", back_populates="recurso", cascade="all, delete, delete-orphan")
 
 
