@@ -13,6 +13,7 @@ from sqlalchemy.sql import text
 from datetime import date
 from sqlalchemy.orm import Session
 from app.database import get_db
+import re
 
 UPLOAD_DIR = "uploads/recursos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -174,6 +175,8 @@ def buscar_recursos(
     q: str = None,
     tiporecurso: str = None,
     idioma: str = None,
+    etiquetas: str = None,
+    fecha: str = None,
     verificado: bool = None,
     fecha_inicio: date = Query(None),
     fecha_fin: date = Query(None),
@@ -185,18 +188,54 @@ def buscar_recursos(
     base_conditions = " WHERE 1=1"
     params = {}
 
-    # -------- Filtros de búsqueda --------
+    # 🧩 --- Búsqueda general avanzada ---
     if q:
+        # 1️⃣ Normalizar texto y separar mayúsculas pegadas
+        q_normal = q.strip()
+        q_normal = re.sub(r'(?<!\s)([A-Z])', r' \1', q_normal).strip()  # KaleftSalazar → Kaleft Salazar
+        q_nospaces = q_normal.replace(" ", "")
+
+        # 2️⃣ Convertir a tokens para búsqueda FTS robusta
+        tokens = re.findall(r'\w+', q_normal.lower())
+        q_ts = " & ".join([f"{t}:*" for t in tokens]) if tokens else ""
+
         base_conditions += """
             AND (
+                -- 🔹 Full Text Search clásico
                 r.tsv @@ plainto_tsquery('spanish', :q)
-                OR r.titulo ILIKE :q_ilike
-                OR r.descripcion ILIKE :q_ilike
+                OR (:q_ts <> '' AND r.tsv @@ to_tsquery('spanish', :q_ts))
+
+                -- 🔹 Comparaciones normales con ILIKE (sin acentos)
+                OR unaccent(lower(r.titulo)) ILIKE unaccent(lower(:q_ilike))
+                OR unaccent(lower(r.descripcion)) ILIKE unaccent(lower(:q_ilike))
+                OR unaccent(lower(r.contenidotexto)) ILIKE unaccent(lower(:q_ilike))
+
+                -- 🔹 Comparaciones sin espacios (clave para "hojadevida")
+                OR unaccent(lower(replace(r.titulo, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
+                OR unaccent(lower(replace(r.descripcion, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
+                OR unaccent(lower(replace(r.contenidotexto, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
+
+                -- 🔹 Autores: con y sin espacios
+                OR EXISTS (
+                    SELECT 1 FROM recurso_autor ra2
+                    JOIN autor a2 ON ra2.idautor = a2.idautor
+                    WHERE ra2.idrecurso = r.idrecurso
+                    AND (
+                        unaccent(lower(a2.nombreautor)) ILIKE unaccent(lower(:q_ilike))
+                        OR unaccent(lower(replace(a2.nombreautor, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
+                    )
+                )
             )
         """
-        params["q"] = q
-        params["q_ilike"] = f"%{q}%"
 
+        params.update({
+            "q": q_normal,
+            "q_ilike": f"%{q_normal}%",
+            "q_nospaces_ilike": f"%{q_nospaces}%",
+            "q_ts": q_ts,
+        })
+
+    # --- Filtros individuales ---
     if tiporecurso:
         base_conditions += " AND r.tiporecurso ILIKE :tiporecurso"
         params["tiporecurso"] = f"%{tiporecurso}%"
@@ -205,35 +244,59 @@ def buscar_recursos(
         base_conditions += " AND r.idioma ILIKE :idioma"
         params["idioma"] = f"%{idioma}%"
 
+    # 🧩 Etiquetas (asignatura, tipo, nivel, etc.)
+    if etiquetas:
+        etiquetas_list = [e.strip() for e in etiquetas.split(",") if e.strip()]
+        if etiquetas_list:
+            etiqueta_conditions = []
+            for i, etq in enumerate(etiquetas_list):
+                key = f"etq{i}"
+                etiqueta_conditions.append(f"e.nombreetiqueta ILIKE :{key}")
+                params[key] = f"%{etq}%"
+            base_conditions += " AND (" + " OR ".join(etiqueta_conditions) + ")"
+
+    # 🧩 Filtro simplificado por fecha (recientes / mes / año)
+    if fecha:
+        hoy = date.today()
+        if "reciente" in fecha:
+            fecha_inicio_calc = hoy.replace(day=max(hoy.day - 7, 1))
+        elif "mes" in fecha:
+            mes = hoy.month - 1 if hoy.month > 1 else 12
+            fecha_inicio_calc = date(hoy.year if hoy.month > 1 else hoy.year - 1, mes, hoy.day)
+        elif "año" in fecha or "anio" in fecha:
+            fecha_inicio_calc = date(hoy.year - 1, hoy.month, hoy.day)
+        else:
+            fecha_inicio_calc = None
+
+        if fecha_inicio_calc:
+            base_conditions += " AND r.fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin"
+            params["fecha_inicio"] = fecha_inicio_calc
+            params["fecha_fin"] = hoy
+
     if verificado is not None:
         base_conditions += " AND r.verificado = :verificado"
         params["verificado"] = verificado
-
-    if fecha_inicio and fecha_fin:
-        base_conditions += " AND r.fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin"
-        params["fecha_inicio"] = fecha_inicio
-        params["fecha_fin"] = fecha_fin
-    elif fecha_inicio:
-        base_conditions += " AND r.fechapublicacion >= :fecha_inicio"
-        params["fecha_inicio"] = fecha_inicio
-    elif fecha_fin:
-        base_conditions += " AND r.fechapublicacion <= :fecha_fin"
-        params["fecha_fin"] = fecha_fin
 
     if ubicacion:
         base_conditions += " AND r.ubicacion ILIKE :ubicacion"
         params["ubicacion"] = f"%{ubicacion}%"
 
-    # -------- Contar resultados --------
-    count_query = f"SELECT COUNT(*) FROM recurso r {base_conditions}"
+    # --- Contar resultados ---
+    count_query = f"""
+        SELECT COUNT(DISTINCT r.idrecurso)
+        FROM recurso r
+        LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso
+        LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta
+        {base_conditions}
+    """
     total = db.execute(text(count_query), params).scalar()
 
-    # -------- Ranking --------
+    # --- Ranking dinámico ---
     rank_sql = "0 AS rank"
     if q:
         rank_sql = "ts_rank_cd(r.tsv, plainto_tsquery('spanish', :q)) AS rank"
 
-    # -------- Query principal --------
+    # --- Query principal ---
     query = f"""
         SELECT 
             r.idrecurso,
@@ -261,13 +324,7 @@ def buscar_recursos(
         GROUP BY r.idrecurso
     """
 
-    # -------- Orden dinámico --------
-    if q:
-        query += " ORDER BY rank DESC, r.creadofecha DESC"
-    else:
-        query += " ORDER BY r.creadofecha DESC"
-
-    query += " LIMIT :limit OFFSET :offset"
+    query += " ORDER BY rank DESC, r.creadofecha DESC LIMIT :limit OFFSET :offset"
     params["limit"] = limit
     params["offset"] = offset
 

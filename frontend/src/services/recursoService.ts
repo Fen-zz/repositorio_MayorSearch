@@ -9,11 +9,14 @@ export type BuscarParams = {
   fecha_inicio?: string; // YYYY-MM-DD
   fecha_fin?: string;    // YYYY-MM-DD
   ubicacion?: string;
+  etiquetas?: string;    // añadí por si mandas etiquetas
+  fecha?: string;        // recientes/ultimo_mes/ultimo_anio
   limit?: number;
   offset?: number;
 };
 
 export const buscarRecursos = async (params: BuscarParams = {}) => {
-  const resp = await API.get("/recursos/buscar", { params });
+  // <- ruta CORRECTA según tu router prefix + path actual en backend
+  const resp = await API.get("/recursos/recursos/buscar", { params });
   return resp.data; // { total, limit, offset, resultados }
 };

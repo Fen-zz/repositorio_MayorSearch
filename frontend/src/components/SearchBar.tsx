@@ -2,8 +2,16 @@
 import React, { useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 
+type FiltersState = {
+  asignatura: string;
+  tipo: string;
+  nivel: string;
+  fecha: string;
+  idioma: string;
+};
+
 type Props = {
-  onSearch: (q: string) => void;
+  onSearch: (params: Partial<FiltersState & { q: string }>) => void;
   placeholder?: string;
 };
 
@@ -13,16 +21,31 @@ export default function SearchBar({
 }: Props) {
   const [q, setQ] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FiltersState>({
+    asignatura: "",
+    tipo: "",
+    nivel: "",
+    fecha: "",
+    idioma: "",
+  });
+
+  const handleFilterClick = (key: keyof FiltersState, value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: prev[key] === value ? "" : value,
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(q.trim());
+    onSearch({
+      q: q.trim(),
+      ...filters,
+    });
   };
 
   return (
     <div className="flex flex-col items-center w-full">
-      
-
       {/* Barra de búsqueda */}
       <form
         onSubmit={handleSubmit}
@@ -50,7 +73,6 @@ export default function SearchBar({
         >
           <Search className="w-5 h-5" />
         </button>
-
       </form>
 
       {/* Filtros desplegables */}
@@ -60,32 +82,73 @@ export default function SearchBar({
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm text-gray-700">
             <div>
               <strong>Asignatura</strong>
-              <p className="cursor-pointer hover:text-blue-700">Teoría de grafos</p>
-              <p className="cursor-pointer hover:text-blue-700">Análisis numérico</p>
+              {["Teoría de grafos", "Análisis numérico"].map((x) => (
+                <p
+                  key={x}
+                  onClick={() => handleFilterClick("asignatura", x)}
+                  className={`cursor-pointer hover:text-blue-700 ${
+                    filters.asignatura === x ? "text-blue-700 font-semibold" : ""
+                  }`}
+                >
+                  {x}
+                </p>
+              ))}
             </div>
             <div>
               <strong>Tipo de recurso</strong>
-              <p className="cursor-pointer hover:text-blue-700">Apuntes</p>
-              <p className="cursor-pointer hover:text-blue-700">Libro/PDF</p>
-              <p className="cursor-pointer hover:text-blue-700">Artículo</p>
+              {["Apuntes", "Libro/PDF", "Artículo"].map((x) => (
+                <p
+                  key={x}
+                  onClick={() => handleFilterClick("tipo", x)}
+                  className={`cursor-pointer hover:text-blue-700 ${
+                    filters.tipo === x ? "text-blue-700 font-semibold" : ""
+                  }`}
+                >
+                  {x}
+                </p>
+              ))}
             </div>
             <div>
               <strong>Nivel académico</strong>
-              <p className="cursor-pointer hover:text-blue-700">Básico</p>
-              <p className="cursor-pointer hover:text-blue-700">Intermedio</p>
-              <p className="cursor-pointer hover:text-blue-700">Avanzado</p>
+              {["Básico", "Intermedio", "Avanzado"].map((x) => (
+                <p
+                  key={x}
+                  onClick={() => handleFilterClick("nivel", x)}
+                  className={`cursor-pointer hover:text-blue-700 ${
+                    filters.nivel === x ? "text-blue-700 font-semibold" : ""
+                  }`}
+                >
+                  {x}
+                </p>
+              ))}
             </div>
             <div>
               <strong>Fecha</strong>
-              <p className="cursor-pointer hover:text-blue-700">Recientes</p>
-              <p className="cursor-pointer hover:text-blue-700">Último mes</p>
-              <p className="cursor-pointer hover:text-blue-700">Último año</p>
+              {["Recientes", "Último mes", "Último año"].map((x) => (
+                <p
+                  key={x}
+                  onClick={() => handleFilterClick("fecha", x)}
+                  className={`cursor-pointer hover:text-blue-700 ${
+                    filters.fecha === x ? "text-blue-700 font-semibold" : ""
+                  }`}
+                >
+                  {x}
+                </p>
+              ))}
             </div>
             <div>
               <strong>Idioma</strong>
-              <p className="cursor-pointer hover:text-blue-700">Inglés</p>
-              <p className="cursor-pointer hover:text-blue-700">Español</p>
-              <p className="cursor-pointer hover:text-blue-700">Otro...</p>
+              {["Inglés", "Español", "Otro..."].map((x) => (
+                <p
+                  key={x}
+                  onClick={() => handleFilterClick("idioma", x)}
+                  className={`cursor-pointer hover:text-blue-700 ${
+                    filters.idioma === x ? "text-blue-700 font-semibold" : ""
+                  }`}
+                >
+                  {x}
+                </p>
+              ))}
             </div>
           </div>
         </div>

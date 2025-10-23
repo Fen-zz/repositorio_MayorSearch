@@ -1,3 +1,4 @@
+// src/components/ResourceCard.tsx
 import {
   FileText,
   Globe,
@@ -22,6 +23,8 @@ type Recurso = {
   autores?: string;
   temas?: string;
   etiquetas?: string;
+  tiporecurso?: string;
+  fechapublicacion?: string | null;
 };
 
 export default function ResourceCard({ r }: { r: Recurso }) {
@@ -30,7 +33,7 @@ export default function ResourceCard({ r }: { r: Recurso }) {
       key={r.idrecurso}
       className="relative border border-gray-200 rounded-xl bg-white hover:shadow-lg transition-all p-5"
     >
-      {/* 🔹 Encabezado */}
+      {/* Encabezado */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
           <BookOpen size={20} className="text-[#0a3d91]" />
@@ -42,12 +45,12 @@ export default function ResourceCard({ r }: { r: Recurso }) {
         />
       </div>
 
-      {/* 🔹 Descripción */}
+      {/* Descripción */}
       <p className="text-gray-700 text-sm mb-3">
         {r.descripcion || "Sin descripción disponible"}
       </p>
 
-      {/* 🔹 Autores, temas y etiquetas en líneas separadas */}
+      {/* Autores, temas y etiquetas */}
       {r.autores && (
         <p className="text-xs text-gray-700 mb-1">
           <span className="font-semibold text-blue-700 flex items-center gap-1">
@@ -75,12 +78,16 @@ export default function ResourceCard({ r }: { r: Recurso }) {
         </p>
       )}
 
-      {/* 🔹 Detalles rápidos */}
+      {/* Detalles rápidos */}
       <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+        {r.tiporecurso && (
+          <span className="flex items-center gap-1">
+            <FileText size={15} className="text-[#0a3d91]" /> {r.tiporecurso}
+          </span>
+        )}
         {r.idioma && (
           <span className="flex items-center gap-1">
-            <Globe size={15} className="text-[#0a3d91]" />{" "}
-            {r.idioma.toUpperCase()}
+            <Globe size={15} className="text-[#0a3d91]" /> {r.idioma.toUpperCase()}
           </span>
         )}
         {r.verificado && (
@@ -88,14 +95,14 @@ export default function ResourceCard({ r }: { r: Recurso }) {
             <CheckCircle size={15} /> Verificado
           </span>
         )}
-        {r.creadofecha && (
+        {r.fechapublicacion && (
           <span className="flex items-center gap-1">
-            📅 {new Date(r.creadofecha).toLocaleDateString("es-CO")}
+            📅 {new Date(r.fechapublicacion).toLocaleDateString()}
           </span>
         )}
       </div>
 
-      {/* 🔹 Botones “Ver” y “Descargar” */}
+      {/* Botones */}
       <div className="absolute bottom-4 right-5 flex gap-2">
         {r.ubicacion && (
           <>
