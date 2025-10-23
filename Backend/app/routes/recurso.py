@@ -189,72 +189,83 @@ def buscar_recursos(
     if q:
         base_conditions += """
             AND (
-                tsv @@ plainto_tsquery('spanish', :q)
-                OR titulo ILIKE :q_ilike
-                OR descripcion ILIKE :q_ilike
+                r.tsv @@ plainto_tsquery('spanish', :q)
+                OR r.titulo ILIKE :q_ilike
+                OR r.descripcion ILIKE :q_ilike
             )
         """
         params["q"] = q
         params["q_ilike"] = f"%{q}%"
 
     if tiporecurso:
-        base_conditions += " AND tiporecurso ILIKE :tiporecurso"
+        base_conditions += " AND r.tiporecurso ILIKE :tiporecurso"
         params["tiporecurso"] = f"%{tiporecurso}%"
 
     if idioma:
-        base_conditions += " AND idioma ILIKE :idioma"
+        base_conditions += " AND r.idioma ILIKE :idioma"
         params["idioma"] = f"%{idioma}%"
 
     if verificado is not None:
-        base_conditions += " AND verificado = :verificado"
+        base_conditions += " AND r.verificado = :verificado"
         params["verificado"] = verificado
 
     if fecha_inicio and fecha_fin:
-        base_conditions += " AND fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin"
+        base_conditions += " AND r.fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin"
         params["fecha_inicio"] = fecha_inicio
         params["fecha_fin"] = fecha_fin
     elif fecha_inicio:
-        base_conditions += " AND fechapublicacion >= :fecha_inicio"
+        base_conditions += " AND r.fechapublicacion >= :fecha_inicio"
         params["fecha_inicio"] = fecha_inicio
     elif fecha_fin:
-        base_conditions += " AND fechapublicacion <= :fecha_fin"
+        base_conditions += " AND r.fechapublicacion <= :fecha_fin"
         params["fecha_fin"] = fecha_fin
 
     if ubicacion:
-        base_conditions += " AND ubicacion ILIKE :ubicacion"
+        base_conditions += " AND r.ubicacion ILIKE :ubicacion"
         params["ubicacion"] = f"%{ubicacion}%"
 
     # -------- Contar resultados --------
-    count_query = f"SELECT COUNT(*) FROM recurso {base_conditions}"
+    count_query = f"SELECT COUNT(*) FROM recurso r {base_conditions}"
     total = db.execute(text(count_query), params).scalar()
 
-    # -------- Construir ranking solo si hay q --------
+    # -------- Ranking --------
     rank_sql = "0 AS rank"
     if q:
-        rank_sql = "ts_rank_cd(tsv, plainto_tsquery('spanish', :q)) AS rank"
+        rank_sql = "ts_rank_cd(r.tsv, plainto_tsquery('spanish', :q)) AS rank"
 
+    # -------- Query principal --------
     query = f"""
         SELECT 
-            idrecurso,
-            titulo,
-            tiporecurso,
-            descripcion,
-            fechapublicacion,
-            idioma,
-            ubicacion,
-            creadofecha,
-            verificado,
-            contenidotexto,
+            r.idrecurso,
+            r.titulo,
+            r.tiporecurso,
+            r.descripcion,
+            r.fechapublicacion,
+            r.idioma,
+            r.ubicacion,
+            r.creadofecha,
+            r.verificado,
+            r.contenidotexto,
+            COALESCE(string_agg(DISTINCT a.nombreautor, ', '), '') AS autores,
+            COALESCE(string_agg(DISTINCT t.nombretema, ', '), '') AS temas,
+            COALESCE(string_agg(DISTINCT e.nombreetiqueta, ', '), '') AS etiquetas,
             {rank_sql}
-        FROM recurso
+        FROM recurso r
+        LEFT JOIN recurso_autor ra ON r.idrecurso = ra.idrecurso
+        LEFT JOIN autor a ON ra.idautor = a.idautor
+        LEFT JOIN recurso_tema rt ON r.idrecurso = rt.idrecurso
+        LEFT JOIN tema t ON rt.idtema = t.idtema
+        LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso
+        LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta
         {base_conditions}
+        GROUP BY r.idrecurso
     """
 
-    # Orden dinámico
+    # -------- Orden dinámico --------
     if q:
-        query += " ORDER BY rank DESC, creadofecha DESC"
+        query += " ORDER BY rank DESC, r.creadofecha DESC"
     else:
-        query += " ORDER BY creadofecha DESC"
+        query += " ORDER BY r.creadofecha DESC"
 
     query += " LIMIT :limit OFFSET :offset"
     params["limit"] = limit
@@ -262,7 +273,6 @@ def buscar_recursos(
 
     resultados = db.execute(text(query), params).mappings().all()
 
-    # -------- Devolver respuesta paginada --------
     return {
         "total": total,
         "limit": limit,
