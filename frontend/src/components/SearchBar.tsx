@@ -117,7 +117,7 @@ const handleSubmit = (e: React.FormEvent) => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm text-gray-700">
             <div>
               <strong>Asignatura</strong>
-              {["Teoría de grafos", "Análisis numérico"].map((x) => (
+              {["Teoria de grafos", "Analisis numerico"].map((x) => (
                 <p
                   key={x}
                   onClick={() => handleFilterClick("asignatura", x)}
@@ -132,7 +132,7 @@ const handleSubmit = (e: React.FormEvent) => {
 
             <div>
               <strong>Tipo de recurso</strong>
-              {["Libro", "Artículo", "Tesis", "Monografía", "Documento", "Apuntes"].map(
+              {["Libro", "Articulo", "Tesis", "Monografia", "Documento", "Apuntes"].map(
                 (x) => (
                   <p
                     key={x}
@@ -149,7 +149,7 @@ const handleSubmit = (e: React.FormEvent) => {
 
             <div>
               <strong>Nivel académico</strong>
-              {["Básico", "Intermedio", "Avanzado"].map((x) => (
+              {["Basico", "Intermedio", "Avanzado"].map((x) => (
                 <p
                   key={x}
                   onClick={() => handleFilterClick("nivel", x)}
