@@ -16,38 +16,57 @@ export type BuscarParams = {
 };
 
 // 🧩🔹 INICIO DE MODIFICACIÓN 🔹
-// Esta función se asegura de que si los filtros incluyen asignaturas, tipos o niveles,
-// se construya un solo string de etiquetas separadas por comas, sin duplicados ni espacios.
+// Se asegura de crear las etiquetas sin borrar otros campos (como las fechas)
 export const normalizarFiltros = (params: any) => {
-  const etiquetas = [];
+  const etiquetas: string[] = [];
+
+  // Copiamos el objeto para no alterar el original
+  const normalizados = { ...params };
 
   // Filtros de Asignatura
-  if (params.asignatura && Array.isArray(params.asignatura)) {
-    etiquetas.push(...params.asignatura.map((e: string) => e.trim()));
+  if (normalizados.asignatura && Array.isArray(normalizados.asignatura)) {
+    etiquetas.push(...normalizados.asignatura.map((e: string) => e.trim()));
   }
 
   // Filtros de Tipo de Recurso
-  if (params.tipoRecurso && Array.isArray(params.tipoRecurso)) {
-    etiquetas.push(...params.tipoRecurso.map((e: string) => e.trim()));
+  if (normalizados.tipoRecurso && Array.isArray(normalizados.tipoRecurso)) {
+    etiquetas.push(...normalizados.tipoRecurso.map((e: string) => e.trim()));
   }
 
   // Filtros de Nivel Académico
-  if (params.nivel && Array.isArray(params.nivel)) {
-    etiquetas.push(...params.nivel.map((e: string) => e.trim()));
+  if (normalizados.nivel && Array.isArray(normalizados.nivel)) {
+    etiquetas.push(...normalizados.nivel.map((e: string) => e.trim()));
   }
 
   // Evitar duplicados y crear una cadena CSV
   if (etiquetas.length > 0) {
-    params.etiquetas = [...new Set(etiquetas)].join(",");
+    normalizados.etiquetas = [...new Set(etiquetas)].join(",");
   }
 
-  return params;
+  // 👇 MUY IMPORTANTE: preservar las fechas si existen
+  if (params.fecha_inicio) normalizados.fecha_inicio = params.fecha_inicio;
+  if (params.fecha_fin) normalizados.fecha_fin = params.fecha_fin;
+
+  return normalizados;
 };
 // 🧩🔹 FIN DE MODIFICACIÓN 🔹
 
-// Versión final del servicio, que usa la función de arriba
+
+// ✅ Servicio de búsqueda con logs detallados
 export const buscarRecursos = async (params: BuscarParams | any = {}) => {
+  console.log("🧩 Antes de normalizar:", params);
   const normalizados = normalizarFiltros(params);
+  console.log("🧩 Después de normalizar:", normalizados);
+
+  // 🧹 Limpiar espacios en fechas si existen
+  if (normalizados.fecha_inicio) normalizados.fecha_inicio = normalizados.fecha_inicio.trim();
+  if (normalizados.fecha_fin) normalizados.fecha_fin = normalizados.fecha_fin.trim();
+
+  // 🕵️‍♂️ Log para confirmar qué se manda al backend
+  console.log("📤 Enviando params al backend:", normalizados);
+
+  // Petición al backend
   const resp = await API.get("/recursos/recursos/buscar", { params: normalizados });
+
   return resp.data; // { total, limit, offset, resultados }
 };

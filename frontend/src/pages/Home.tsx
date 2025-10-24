@@ -11,73 +11,96 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [lastQuery, setLastQuery] = useState<string>("");
 
-  // ✅ INICIO DE MODIFICACIÓN: manejo completo de etiquetas reales según lo indicado
-  const mapFiltersToParams = (payload: Record<string, any>) => {
+  /**
+   * mapFiltersToParams
+   * - No borra campos desconocidos.
+   * - Normaliza idioma y etiquetas.
+   * - Conserva fecha_inicio/fecha_fin si vienen.
+   */
+  const mapFiltersToParams = (payload: Record<string, any> = {}) => {
     const params: Record<string, any> = {};
 
-    if (payload.q) {
-      params.q = payload.q;
-      setLastQuery(payload.q);
+    // q (texto libre)
+    if (payload.q && String(payload.q).trim() !== "") {
+      params.q = String(payload.q).trim();
+      setLastQuery(String(payload.q).trim());
     }
 
-    // Idioma directo (solo 'es' o 'en')
+    // Idioma (simple mapping)
     if (payload.idioma) {
-      const idi = payload.idioma.toLowerCase();
+      const idi = String(payload.idioma).toLowerCase();
       if (idi.includes("inglés") || idi.includes("ingles")) params.idioma = "en";
       else if (idi.includes("español") || idi.includes("espanol")) params.idioma = "es";
+      else params.idioma = payload.idioma;
     }
 
-    // Todas las etiquetas deben coincidir exactamente con los valores reales en BD
+    // Construcción de etiquetas a partir de los filtros conocidos
     const etiquetas: string[] = [];
 
-    // Asignatura (usa etiquetas reales)
     if (payload.asignatura) {
-      const asig = payload.asignatura.trim();
-      if (["teoría de grafos", "teoria de grafos", "análisis numérico", "analisis numerico"].includes(asig.toLowerCase())) {
-        etiquetas.push(asig);
-      }
+      const asig = String(payload.asignatura).trim();
+      if (asig) etiquetas.push(asig);
     }
 
-    // Tipo de recurso (Libro, Artículo, Tesis, Monografía, Documento)
     if (payload.tipo) {
-      const tipo = payload.tipo.trim();
-      if (["libro", "artículo", "articulo", "tesis", "monografía", "monografia", "documento"].includes(tipo.toLowerCase())) {
-        etiquetas.push(tipo);
-      }
+      const tipo = String(payload.tipo).trim();
+      if (tipo) etiquetas.push(tipo);
     }
 
-    // Nivel académico (Básico, Intermedio, Avanzado)
     if (payload.nivel) {
-      const nivel = payload.nivel.trim();
-      if (["básico", "basico", "intermedio", "avanzado"].includes(nivel.toLowerCase())) {
-        etiquetas.push(nivel);
-      }
+      const nivel = String(payload.nivel).trim();
+      if (nivel) etiquetas.push(nivel);
     }
 
-    // Solo si hay etiquetas, se mandan al backend separadas por coma
-    if (etiquetas.length > 0) {
+    // Si el propio payload ya traía 'etiquetas' explícitas, respetarlas (se antepone)
+    if (payload.etiquetas && String(payload.etiquetas).trim() !== "") {
+      params.etiquetas = String(payload.etiquetas).trim();
+    } else if (etiquetas.length > 0) {
       params.etiquetas = etiquetas.join(",");
     }
 
-    // La fecha se omite (no aplica)
-    params.limit = 10;
-    params.offset = 0;
+    // Fechas (importante: aceptar fecha_inicio / fecha_fin que vienen del SearchBar)
+    if (payload.fecha_inicio) params.fecha_inicio = payload.fecha_inicio;
+    if (payload.fecha_fin) params.fecha_fin = payload.fecha_fin;
+
+    // Mantener cualquier otro filtro "útil" que venga crudo (no destructuramos todo)
+    // Pero no copie cosas vacías o funciones por accidente.
+    // Aquí podrías mapear más campos si los usas en el backend.
+    // Ej: verificado, ubicacion, etc.
+    if (payload.verificado !== undefined) params.verificado = payload.verificado;
+    if (payload.ubicacion) params.ubicacion = payload.ubicacion;
+
+    // límites por defecto (puedes exponer esto al UI más tarde)
+    params.limit = payload.limit ?? 10;
+    params.offset = payload.offset ?? 0;
 
     return params;
   };
-  // ✅ FIN DE MODIFICACIÓN
 
-  const handleSearch = async (payload: Record<string, any>) => {
-    const isEmpty =
-      !payload ||
-      (!payload.q && !payload.tipo && !payload.asignatura && !payload.nivel && !payload.fecha && !payload.idioma);
+  const handleSearch = async (payload: Record<string, any> | undefined) => {
+    // Si no vino nada, no hacemos nada
+    if (!payload) return;
 
-    if (isEmpty) return;
-
+    // Construimos params y conservamos TODO lo relevante, incluidas las fechas
     const params = mapFiltersToParams(payload);
+
+    // Si no hay filtro alguno (ni texto ni etiquetas ni fechas), no lanzamos la petición
+    const hasAnyFilter =
+      Boolean(params.q) ||
+      Boolean(params.etiquetas) ||
+      (params.fecha_inicio && params.fecha_fin) ||
+      Boolean(params.idioma) ||
+      params.verificado !== undefined ||
+      Boolean(params.ubicacion);
+
+    if (!hasAnyFilter) {
+      // Evitamos peticiones vacías que retornan todo el catálogo (opcional)
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log("🔥 Params enviados a buscarRecursos:", params);
       const data = await buscarRecursos(params);
       console.log("✅ Resultados recibidos:", data);
       setResultados(data.resultados || []);

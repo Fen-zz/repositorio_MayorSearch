@@ -1,6 +1,7 @@
 // src/components/SearchBar.tsx
 import React, { useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
+import DatePicker from "react-datepicker";
 
 type FiltersState = {
   asignatura: string;
@@ -29,7 +30,12 @@ export default function SearchBar({
     fecha: "",
     idioma: "",
     etiquetas: "",
-  });
+  }
+);
+  
+  const [fechaInicio, setFechaInicio] = useState<Date | null>(null);
+  const [fechaFin, setFechaFin] = useState<Date | null>(null);
+  const [mostrarCalendario, setMostrarCalendario] = useState(false);
 
   // Función que maneja clics en filtros
   const handleFilterClick = (key: keyof FiltersState, value: string) => {
@@ -55,13 +61,23 @@ export default function SearchBar({
   };
 
   // Envío del formulario
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch({
-      q: q.trim(),
-      ...filters,
-    });
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // 🧠 Creamos el objeto base
+  const params: any = {
+    q: q.trim(),
+    ...filters,
   };
+
+  // 🗓️ Si hay fechas seleccionadas, las añadimos al query
+  if (fechaInicio && fechaFin) {
+    params.fecha_inicio = fechaInicio.toISOString().split("T")[0];
+    params.fecha_fin = fechaFin.toISOString().split("T")[0];
+  }
+  console.log("🔥 Params enviados a buscarRecursos:", params);
+  onSearch(params);
+};
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -146,20 +162,81 @@ export default function SearchBar({
               ))}
             </div>
 
-            <div>
+            <div className="relative">
               <strong>Fecha</strong>
-              {["Recientes", "Último mes", "Último año"].map((x) => (
-                <p
-                  key={x}
-                  onClick={() => handleFilterClick("fecha", x)}
-                  className={`cursor-pointer hover:text-blue-700 ${
-                    filters.fecha === x ? "text-blue-700 font-semibold" : ""
-                  }`}
-                >
-                  {x}
-                </p>
-              ))}
+              <p
+                onClick={() => setMostrarCalendario(!mostrarCalendario)}
+                className="cursor-pointer hover:text-blue-700"
+              >
+                Rango de fecha
+              </p>
+
+              {mostrarCalendario && (
+                <div className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-3 mt-2">
+                  <p className="text-sm font-semibold text-gray-600 mb-2">Selecciona el rango</p>
+                  <div className="flex gap-2 items-center">
+                    <DatePicker
+                      selected={fechaInicio}
+                      onChange={(date) => {
+                        setFechaInicio(date);
+                        if (fechaFin && date && date > fechaFin) setFechaFin(null); // evitar rango inválido
+                      }}
+                      selectsStart
+                      startDate={fechaInicio ?? undefined}
+                      endDate={fechaFin ?? undefined}
+                      placeholderText="Desde"
+                      className="border border-gray-300 rounded-md p-1 text-sm"
+                      dateFormat="yyyy-MM-dd"
+                    />
+                    <DatePicker
+                      selected={fechaFin}
+                      onChange={(date) => setFechaFin(date)}
+                      selectsEnd
+                      startDate={fechaInicio ?? undefined}
+                      endDate={fechaFin ?? undefined}
+                      minDate={fechaInicio ?? undefined} // <-- aquí resolvimos el tipo Date | undefined
+                      placeholderText="Hasta"
+                      className="border border-gray-300 rounded-md p-1 text-sm"
+                      dateFormat="yyyy-MM-dd"
+                    />
+                  </div>
+
+                  <div className="flex justify-end mt-3">
+                  <button
+                    onClick={() => {
+                      if (fechaInicio && fechaFin) {
+                        // 🧠 Actualizamos los filtros con las fechas
+                        const filtrosAplicados = {
+                          ...filters,
+                          fecha: "rango",
+                          fecha_inicio: fechaInicio.toISOString().split("T")[0],
+                          fecha_fin: fechaFin.toISOString().split("T")[0],
+                        };
+
+                        // Guardamos las fechas en el estado principal de filtros
+                        setFilters(filtrosAplicados);
+
+                        // Construimos los params a enviar
+                        const params: any = {
+                          q: q.trim(),
+                          ...filtrosAplicados,
+                        };
+
+                        console.log("📤 Aplicando filtro de fecha y enviando params:", params); // 👀
+
+                        onSearch(params);
+                      }
+                      setMostrarCalendario(false);
+                    }}
+                    className="bg-blue-700 text-white text-sm px-3 py-1 rounded-md hover:opacity-90"
+                  >
+                    Aplicar
+                  </button>
+                  </div>
+                </div>
+              )}
             </div>
+
 
             <div>
               <strong>Idioma</strong>

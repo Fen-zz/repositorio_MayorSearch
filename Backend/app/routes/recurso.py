@@ -14,6 +14,8 @@ from datetime import date
 from sqlalchemy.orm import Session
 from app.database import get_db
 import re
+from datetime import date, datetime, timedelta
+
 
 UPLOAD_DIR = "uploads/recursos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -201,12 +203,11 @@ def buscar_recursos(
         WHERE 1=1
     """
 
-    base_conditions = ""
-
-    # --- 🔍 Búsqueda general avanzada + Filtros combinados correctamente ---
-    search_parts = []
     params = {}
+    search_parts = []
+    filter_parts = []
 
+    # --- 🔍 Búsqueda general ---
     if q:
         q_normal = q.strip()
         q_normal = re.sub(r'(?<!\s)([A-Z])', r' \1', q_normal).strip()
@@ -221,30 +222,21 @@ def buscar_recursos(
                 OR unaccent(lower(r.titulo)) ILIKE unaccent(lower(:q_ilike))
                 OR unaccent(lower(r.descripcion)) ILIKE unaccent(lower(:q_ilike))
                 OR unaccent(lower(r.contenidotexto)) ILIKE unaccent(lower(:q_ilike))
-                OR unaccent(lower(replace(r.titulo, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
-                OR unaccent(lower(replace(r.descripcion, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
-                OR unaccent(lower(replace(r.contenidotexto, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
                 OR EXISTS (
                     SELECT 1 FROM recurso_autor ra2
                     JOIN autor a2 ON ra2.idautor = a2.idautor
                     WHERE ra2.idrecurso = r.idrecurso
-                    AND (
-                        unaccent(lower(a2.nombreautor)) ILIKE unaccent(lower(:q_ilike))
-                        OR unaccent(lower(replace(a2.nombreautor, ' ', ''))) ILIKE unaccent(lower(:q_nospaces_ilike))
-                    )
+                    AND unaccent(lower(a2.nombreautor)) ILIKE unaccent(lower(:q_ilike))
                 )
             )
         """)
-
         params.update({
             "q": q_normal,
             "q_ilike": f"%{q_normal}%",
-            "q_nospaces_ilike": f"%{q_nospaces}%",
             "q_ts": q_ts,
         })
 
-    filter_parts = []
-
+    # --- 🎯 Filtros adicionales ---
     if tiporecurso:
         filter_parts.append("r.tiporecurso ILIKE :tiporecurso")
         params["tiporecurso"] = f"%{tiporecurso}%"
@@ -253,6 +245,15 @@ def buscar_recursos(
         filter_parts.append("r.idioma ILIKE :idioma")
         params["idioma"] = f"%{idioma}%"
 
+    if verificado is not None:
+        filter_parts.append("r.verificado = :verificado")
+        params["verificado"] = verificado
+
+    if ubicacion:
+        filter_parts.append("r.ubicacion ILIKE :ubicacion")
+        params["ubicacion"] = f"%{ubicacion}%"
+
+    # --- 🏷️ Filtro por etiquetas ---
     if etiquetas:
         etiquetas_list = [e.strip() for e in etiquetas.split(",") if e.strip()]
         if etiquetas_list:
@@ -270,32 +271,38 @@ def buscar_recursos(
             for i, etq in enumerate(etiquetas_list):
                 params[f"etq{i}"] = etq.lower()
 
-    if verificado is not None:
-        filter_parts.append("r.verificado = :verificado")
-        params["verificado"] = verificado
+    # --- 📅 Filtro por rango de fechas ---
+    if fecha_inicio and fecha_fin:
+        try:
+            # Aseguramos formato DATE
+            fecha_inicio_date = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+            fecha_fin_date = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
 
-    if ubicacion:
-        filter_parts.append("r.ubicacion ILIKE :ubicacion")
-        params["ubicacion"] = f"%{ubicacion}%"
+            # Forzamos conversión explícita a DATE en SQL (clave del error anterior)
+            filter_parts.append("DATE(r.fechapublicacion) >= :fecha_inicio AND DATE(r.fechapublicacion) <= :fecha_fin")
+            params["fecha_inicio"] = fecha_inicio_date
+            params["fecha_fin"] = fecha_fin_date
+            print(" Fechas recibidas correctamente:", fecha_inicio_date, fecha_fin_date)
+        except ValueError:
+            print(" Error de formato en fecha:", fecha_inicio, fecha_fin)
+            pass
 
-    if fecha:
+    elif fecha:
         hoy = date.today()
-        if "reciente" in fecha:
-            fecha_inicio_calc = hoy.replace(day=max(hoy.day - 7, 1))
-        elif "mes" in fecha:
-            mes = hoy.month - 1 if hoy.month > 1 else 12
-            fecha_inicio_calc = date(hoy.year if hoy.month > 1 else hoy.year - 1, mes, hoy.day)
-        elif "año" in fecha or "anio" in fecha:
-            fecha_inicio_calc = date(hoy.year - 1, hoy.month, hoy.day)
-        else:
-            fecha_inicio_calc = None
+        fecha_inicio_calc = None
+        if "reciente" in fecha.lower():
+            fecha_inicio_calc = hoy - timedelta(days=7)
+        elif "mes" in fecha.lower():
+            fecha_inicio_calc = hoy - timedelta(days=30)
+        elif "año" in fecha.lower() or "anio" in fecha.lower():
+            fecha_inicio_calc = hoy - timedelta(days=365)
 
         if fecha_inicio_calc:
-            filter_parts.append("r.fechapublicacion BETWEEN :fecha_inicio AND :fecha_fin")
+            filter_parts.append("DATE(r.fechapublicacion) >= :fecha_inicio AND DATE(r.fechapublicacion) <= :fecha_fin")
             params["fecha_inicio"] = fecha_inicio_calc
             params["fecha_fin"] = hoy
 
-    # --- 💡 Aquí la clave: agrupar correctamente búsqueda + filtros ---
+    # --- 💡 Combinar condiciones ---
     conditions = []
     if search_parts:
         conditions.append("(" + " OR ".join(search_parts) + ")")
@@ -303,10 +310,10 @@ def buscar_recursos(
         conditions.append("(" + " AND ".join(filter_parts) + ")")
 
     if conditions:
-        base_conditions += " AND " + " AND ".join(conditions)
+        base_query += " AND " + " AND ".join(conditions)
 
-    # ---------------- Consulta final ----------------
-    final_query = base_query + base_conditions + """
+    # --- 🚀 Consulta final ---
+    final_query = base_query + """
         GROUP BY r.idrecurso
         ORDER BY r.creadofecha DESC
         LIMIT :limit OFFSET :offset
@@ -317,10 +324,8 @@ def buscar_recursos(
     rows = db.execute(text(final_query), params).fetchall()
     resultados = [dict(row._mapping) for row in rows]
 
-    # Para mantener compatibilidad con tu antiguo response shape
-    # y con swagger que espera { total, limit, offset, resultados }
     total_count = db.execute(text(
-        f"SELECT COUNT(DISTINCT r.idrecurso) FROM recurso r LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta WHERE 1=1 {base_conditions}"
+        f"SELECT COUNT(DISTINCT r.idrecurso) FROM recurso r WHERE 1=1 {' AND ' + ' AND '.join(conditions) if conditions else ''}"
     ), params).scalar()
 
     return {
