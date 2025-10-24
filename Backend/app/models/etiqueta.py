@@ -9,4 +9,4 @@ class Etiqueta(Base):
     nombreetiqueta = Column(String(100), nullable=False, unique=True)
 
     # Relación con recurso_etiqueta
-    recursos = relationship("RecursoEtiqueta", back_populates="etiqueta")
+    recursos = relationship("RecursoEtiqueta", back_populates="etiqueta", cascade="all, delete, delete-orphan")

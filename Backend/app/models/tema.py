@@ -13,4 +13,4 @@ class Tema(Base):
     subtemas = relationship("Tema", backref="tema_padre", remote_side=[idtema])
 
     # Relación con la tabla intermedia recurso_tema
-    recurso_temas = relationship("RecursoTema", back_populates="tema")
+    recurso_temas = relationship("RecursoTema", back_populates="tema", cascade="all, delete, delete-orphan")

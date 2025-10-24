@@ -11,4 +11,4 @@ class Autor(Base):
     profileurl = Column(String(250))
     orcid = Column(String(50))
 
-    recursos = relationship("RecursoAutor", back_populates="autor")
+    recursos = relationship("RecursoAutor", back_populates="autor", cascade="all, delete, delete-orphan")
