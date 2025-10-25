@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import APIRouter, Depends, HTTPException, Form, status, Body, Request
 from sqlalchemy.orm import Session
 from app.models.usuario import Usuario
 from app.database import get_db
@@ -7,7 +7,7 @@ from app.utils.utils import hash_password
 from fastapi import status
 from app.utils.utils import verify_password
 from fastapi import BackgroundTasks
-from app.utils.jwt_handler import create_reset_token, verify_reset_token, create_access_token
+from app.utils.jwt_handler import create_reset_token, verify_reset_token, create_access_token, verify_access_token
 
 from email.message import EmailMessage
 import aiosmtplib
@@ -20,6 +20,7 @@ import os
 from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
 
+from fastapi import Depends
 
 router = APIRouter()
 resend.api_key = os.getenv("RESEND_API_KEY")
@@ -59,6 +60,106 @@ def crear_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(nuevo_usuario)
     return nuevo_usuario
+
+# -------------------------------------
+# Obtener datos del usuario autenticado
+# -------------------------------------
+@router.get("/usuarios/me", response_model=UsuarioOut)
+def obtener_usuario_actual(request: Request, db: Session = Depends(get_db)):
+    """
+    Retorna la información del usuario actual.
+    Compatible con:
+      - Frontend: Authorization: Bearer <token>
+      - Swagger / debug: ?token_or_request=<token>
+    """
+    # 1) intentar token desde header
+    token = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+
+    # 2) si no hay header, intentar query param (swagger, debug)
+    if not token:
+        token = request.query_params.get("token_or_request")
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Token no recibido")
+
+    # 3) verificar token -> esperamos un dict (payload) o None
+    payload = verify_access_token(token)
+    if not payload or not isinstance(payload, dict):
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+
+    # 4) extraer idusuario del payload (puede venir como int o string)
+    idusuario = payload.get("idusuario") or payload.get("sub")  # try both
+    if idusuario is None:
+        raise HTTPException(status_code=401, detail="Token inválido: idusuario no encontrado")
+
+    try:
+        idusuario = int(idusuario)
+    except (TypeError, ValueError):
+        # Si por alguna razón 'sub' es email en tu token, intenta obtener idusuario explícito
+        # Si no hay un id numérico, falla con mensaje claro.
+        raise HTTPException(status_code=401, detail="idusuario inválido en token")
+
+    # 5) buscar usuario en DB
+    usuario = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    return usuario
+
+
+# =====================================================
+# ACTUALIZAR PERFIL DEL USUARIO AUTENTICADO (compatible)
+# =====================================================
+@router.put("/usuarios/me", response_model=UsuarioOut)
+def actualizar_usuario_actual(request: Request, usuario_update: UsuarioUpdate = Body(...), db: Session = Depends(get_db)):
+    """
+    Actualiza el perfil del usuario autenticado.
+    Compatible con header Authorization o ?token_or_request.
+    """
+    # 1) obtener token (header o query)
+    token = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+
+    if not token:
+        token = request.query_params.get("token_or_request")
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Token no recibido")
+
+    # 2) verificar token -> obtener payload
+    payload = verify_access_token(token)
+    if not payload or not isinstance(payload, dict):
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+
+    # 3) extraer idusuario
+    idusuario = payload.get("idusuario") or payload.get("sub")
+    if idusuario is None:
+        raise HTTPException(status_code=401, detail="Token inválido: idusuario no encontrado")
+
+    try:
+        idusuario = int(idusuario)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=401, detail="idusuario inválido en token")
+
+    # 4) buscar usuario en DB
+    usuario_db = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
+    if not usuario_db:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # 5) actualizar solo los campos enviados
+    update_data = usuario_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(usuario_db, key, value)
+
+    db.commit()
+    db.refresh(usuario_db)
+
+    return usuario_db
 
 # ACTUALIZAR
 @router.put("/usuarios/{idusuario}", response_model=UsuarioOut)

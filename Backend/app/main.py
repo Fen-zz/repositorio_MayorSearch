@@ -20,7 +20,6 @@ from app.routes import favorito as favorito_routes
 from app.routes import debug_token as debug_token_routes
 
 
-
 # Crea las tablas
 Base.metadata.create_all(bind=engine)
 
@@ -56,3 +55,32 @@ app.include_router(debug_token_routes.router)
 @app.get("/")
 def read_root():
     return {"mensaje": "Bienvenido al repositorio académico Mayorsearch"}
+
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.openapi.utils import get_openapi
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="MayorSearch API",
+        version="1.0.0",
+        description="Documentación interactiva de la API de MayorSearch",
+        routes=app.routes,
+    )
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+    for path in openapi_schema["paths"]:
+        for method in openapi_schema["paths"][path]:
+            openapi_schema["paths"][path][method]["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi

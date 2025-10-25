@@ -70,3 +70,47 @@ export const buscarRecursos = async (params: BuscarParams | any = {}) => {
 
   return resp.data; // { total, limit, offset, resultados }
 };
+
+// ================================
+// 🧩 FAVORITOS (frontend <-> backend)
+// ================================
+
+/**
+ * Obtener los favoritos del usuario autenticado
+ */
+export const getFavoritos = async (token: string) => {
+  const resp = await API.get("/favoritos/", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return resp.data; // lista de favoritos
+};
+
+/**
+ * Agregar un recurso a favoritos
+ */
+export const addFavorito = async (token: string, idrecurso: number) => {
+  const resp = await API.post(
+    "/favoritos/",
+    { idrecurso },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return resp.data;
+};
+
+/**
+ * Eliminar un recurso de favoritos
+ */
+export const removeFavorito = async (token: string, idrecurso: number) => {
+  const resp = await API.delete(`/favoritos/${idrecurso}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return resp.data;
+};

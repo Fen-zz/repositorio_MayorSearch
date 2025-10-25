@@ -6,6 +6,7 @@ import Root from "./pages/Root"; // Componente que se muestra en "/"
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -28,6 +29,8 @@ function App() {
 
         {/* Ruta del Resset */}
         <Route path="/reset-password" element={<ResetPassword />} />
+
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,24 +1,32 @@
-// src/hooks/useAuth.tsx
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 
+interface User {
+  idusuario?: number;
+  nombreusuario?: string;
+  telefono?: string;
+  email?: string;
+  codigoestudiantil?: string;
+  rol?: string;
+}
+
 interface AuthContextType {
-  user: string | null;
+  user: User | string | null;
   rol: string | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (user: string, rol: string, token: string) => void;
+  login: (user: User | string, rol: string, token: string) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<string | null>(null);
+  const [user, setUser] = useState<User | string | null>(null);
   const [rol, setRol] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // Carga la sesión guardada al iniciar
+  // ✅ Carga la sesión guardada (compatibilidad total)
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
     const storedUser = localStorage.getItem("user");
@@ -26,22 +34,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(storedUser);
       setRol(storedRol);
+
+      try {
+        // Si es un objeto JSON válido, lo parsea
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch {
+        // Si no, deja el string (caso login por Google)
+        setUser(storedUser);
+      }
     }
   }, []);
 
-  // Guarda datos de sesión al hacer login
-  const login = (user: string, rol: string, token: string) => {
+  // ✅ Guarda sesión (sin romper login por Google)
+  const login = (user: User | string, rol: string, token: string) => {
     localStorage.setItem("access_token", token);
-    localStorage.setItem("user", user);
+    localStorage.setItem(
+      "user",
+      typeof user === "string" ? user : JSON.stringify(user)
+    );
     localStorage.setItem("rol", rol);
     setUser(user);
     setRol(rol);
     setToken(token);
   };
 
-  // Limpia sesión (sin redirección)
   const logout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
@@ -49,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setRol(null);
     setToken(null);
-    // 👇 No más window.location.href aquí
   };
 
   const isAuthenticated = Boolean(token && user);
@@ -63,7 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook para acceder al contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth debe usarse dentro de un AuthProvider");

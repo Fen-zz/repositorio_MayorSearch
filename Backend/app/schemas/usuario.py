@@ -21,7 +21,7 @@ class UsuarioCreate(UsuarioBase):
 class UsuarioOut(UsuarioBase):
     idusuario: int
     fechacreacion: datetime | None = None
-
+    codigoestudiantil: Optional[str] = None
     class Config:
         orm_mode = True
 
@@ -31,4 +31,5 @@ class UsuarioUpdate(BaseModel):
     telefono: Optional[str] = None
     email: Optional[EmailStr] = None
     rol: Optional[str] = None
+    codigoestudiantil: Optional[str] = None
 

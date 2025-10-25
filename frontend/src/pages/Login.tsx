@@ -3,8 +3,7 @@ import GoogleLoginButton from "../components/googleLoginButton";
 import { useAuth } from "../hooks/useAuth";
 import { loginManual } from "../services/authService";
 import { useNavigate } from "react-router-dom";
-import { Link } from 'react-router-dom';
-
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const { login } = useAuth();
@@ -13,22 +12,27 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleManualLogin = async () => {
-  if (!email || !password) {
-    alert("Por favor completa ambos campos.");
-    return;
-  }
+    if (!email || !password) {
+      alert("Por favor completa ambos campos.");
+      return;
+    }
 
-  try {
-    const resp = await loginManual(email, password);
-    login(resp.data.usuario, resp.data.rol, resp.data.access_token);
-    alert("Inicio de sesión exitoso ✅");
-    navigate("/home");
-  } catch (error) {
-    console.error("Error en login manual:", error);
-    alert("Credenciales inválidas");
-  }
+    try {
+      const resp = await loginManual(email, password);
+
+      // ✅ Guarda el token en localStorage
+      localStorage.setItem("access_token", resp.data.access_token);
+
+      // Mantiene tu flujo actual
+      login(resp.data.usuario, resp.data.rol, resp.data.access_token);
+
+      alert("Inicio de sesión exitoso ✅");
+      navigate("/home");
+    } catch (error) {
+      console.error("Error en login manual:", error);
+      alert("Credenciales inválidas");
+    }
   };
-
 
   return (
     <div className="min-h-screen bg-[#081B33] flex flex-col">
@@ -40,11 +44,17 @@ export default function Login() {
         </div>
 
         <ul className="flex items-center gap-8 text-sm">
-          <li className="hover:text-white cursor-pointer"><Link to="/">INICIO</Link></li>
+          <li className="hover:text-white cursor-pointer">
+            <Link to="/">INICIO</Link>
+          </li>
           <li className="hover:text-white cursor-pointer">RECURSOS ⌄</li>
           <li className="hover:text-white cursor-pointer">AUTORES ⌄</li>
-          <li className="hover:text-white cursor-pointer"><Link to="#contacto">CONTÁCTANOS</Link></li>
-          <li className="hover:text-white cursor-pointer"><Link to="/register">REGISTRARSE</Link></li>
+          <li className="hover:text-white cursor-pointer">
+            <Link to="#contacto">CONTÁCTANOS</Link>
+          </li>
+          <li className="hover:text-white cursor-pointer">
+            <Link to="/register">REGISTRARSE</Link>
+          </li>
           <li className="text-white font-semibold cursor-pointer">
             INICIAR SESIÓN
           </li>
@@ -116,9 +126,12 @@ export default function Login() {
 
             <p className="text-sm text-center mt-6 text-gray-400">
               ¿No tienes una cuenta?{" "}
-              <a href="#" className="text-[#5C8DFF] hover:underline">
+              <Link
+                to="/register"
+                className="text-[#5C8DFF] hover:underline"
+              >
                 Regístrate.
-              </a>
+              </Link>
             </p>
           </div>
         </div>
