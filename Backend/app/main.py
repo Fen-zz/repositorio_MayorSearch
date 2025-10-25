@@ -16,6 +16,10 @@ from app.routes import tema as tema_routes
 from app.routes import recurso_tema as recurso_tema_routes
 from app.routes import etiqueta as etiqueta_routes
 from app.routes import recurso_etiqueta as recurso_etiqueta_routes
+from app.routes import favorito as favorito_routes
+from app.routes import debug_token as debug_token_routes
+
+
 
 # Crea las tablas
 Base.metadata.create_all(bind=engine)
@@ -46,6 +50,8 @@ app.include_router(tema_routes.router)
 app.include_router(recurso_tema_routes.router)
 app.include_router(etiqueta_routes.router)
 app.include_router(recurso_etiqueta_routes.router)
+app.include_router(favorito_routes.router)
+app.include_router(debug_token_routes.router)
 
 @app.get("/")
 def read_root():

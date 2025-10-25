@@ -7,7 +7,7 @@ from app.utils.utils import hash_password
 from fastapi import status
 from app.utils.utils import verify_password
 from fastapi import BackgroundTasks
-from app.utils.jwt_handler import create_reset_token, verify_reset_token
+from app.utils.jwt_handler import create_reset_token, verify_reset_token, create_access_token
 
 from email.message import EmailMessage
 import aiosmtplib
@@ -101,8 +101,8 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Contraseña incorrecta")
 
     # Generar token JWT reutilizando la función existente
-    token_data = {"sub": usuario.email, "rol": usuario.rol}
-    access_token = create_reset_token(token_data)
+    token_data = {"sub": usuario.email, "rol": usuario.rol, "idusuario": usuario.idusuario}
+    access_token = create_access_token(token_data)
 
     return {
         "access_token": access_token,
@@ -172,8 +172,8 @@ def login_google(id_token_str: str = Form(...), db: Session = Depends(get_db)):
             db.refresh(usuario)
 
     # Generar JWT local
-    token_data = {"sub": usuario.email, "rol": usuario.rol}
-    access_token = create_reset_token(token_data)
+    token_data = {"sub": usuario.email, "rol": usuario.rol, "idusuario": usuario.idusuario}
+    access_token = create_access_token(token_data)
 
     return {
         "access_token": access_token,
