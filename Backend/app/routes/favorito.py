@@ -6,9 +6,10 @@ from typing import List
 from app.database import get_db
 from app.models.favorito import Favorito
 from app.models.recurso import Recurso
+from app.schemas.recurso import RecursoBase
 from app.schemas.favorito import FavoritoBase, FavoritoCreate
 from app.utils.auth import get_current_user_id  # ✅ usamos el helper central
-
+from app.schemas.recurso import RecursoOut
 router = APIRouter(
     prefix="/favoritos",
     tags=["Favoritos"]
@@ -69,13 +70,17 @@ def eliminar_favorito(
 # ============================================================
 # Listar favoritos del usuario
 # ============================================================
-@router.get("/", response_model=List[FavoritoBase])
+@router.get("/", response_model=List[RecursoOut])
 def listar_favoritos(
-    db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id)
+    idusuario: int = Depends(get_current_user_id),  # ✅ obtiene solo el idusuario
+    db: Session = Depends(get_db)
 ):
-    favoritos = db.query(Favorito).filter(Favorito.idusuario == user_id).all()
-    return favoritos
+    favoritos = db.query(Favorito).filter(Favorito.idusuario == idusuario).all()
+
+    if not favoritos:
+        return []  # sin favoritos = lista vacía (no error)
+
+    return [RecursoOut.from_orm(f.recurso) for f in favoritos]
 
 
 # ============================================================

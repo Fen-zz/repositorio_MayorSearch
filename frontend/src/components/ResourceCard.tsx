@@ -1,4 +1,8 @@
 // src/components/ResourceCard.tsx
+import { useEffect, useState } from "react";
+import { addFavorito, removeFavorito, checkFavorito } from "../services/favoritosService"; // 🧩 NUEVO
+import { useAuth } from "../hooks/useAuth"; // 🧩 NUEVO
+
 import {
   FileText,
   Globe,
@@ -28,6 +32,52 @@ type Recurso = {
 };
 
 export default function ResourceCard({ r }: { r: Recurso }) {
+  // 🧩 Estado de favorito y auth (no obligatorio pasar token a las funciones del service)
+  const { token } = useAuth();
+  const [esFavorito, setEsFavorito] = useState(false);
+
+  // 🧩 Verificar si ya es favorito al montar el componente
+  useEffect(() => {
+    const verificarFavorito = async () => {
+      // Si no hay token no consultamos (evita llamadas innecesarias)
+      if (!token) return;
+      if (r.idrecurso == null) return;
+
+      try {
+        // ← CORRECCIÓN: llamamos checkFavorito solo con el id, el servicio toma el token interno
+        const esFav = await checkFavorito(r.idrecurso);
+        setEsFavorito(esFav);
+      } catch (err) {
+        console.error("Error al verificar favorito:", err);
+      }
+    };
+    verificarFavorito();
+  }, [r.idrecurso, token]);
+
+  // 🧩 Manejar clic en el ícono de favorito
+  const manejarFavorito = async () => {
+    if (!token) {
+      alert("Debes iniciar sesión para agregar favoritos 😅");
+      return;
+    }
+
+    try {
+      if (esFavorito) {
+        // ← CORRECCIÓN: removeFavorito sólo con idrecurso
+        await removeFavorito(r.idrecurso);
+        setEsFavorito(false);
+      } else {
+        // ← CORRECCIÓN: addFavorito sólo con idrecurso
+        await addFavorito(r.idrecurso);
+        setEsFavorito(true);
+      }
+    } catch (err) {
+      console.error("Error al actualizar favorito:", err);
+      alert("Ocurrió un error al actualizar favoritos. Revisa la consola.");
+    }
+  };
+
+  // 💎 LÓGICA ORIGINAL (intacta)
   return (
     <div
       key={r.idrecurso}
@@ -39,9 +89,14 @@ export default function ResourceCard({ r }: { r: Recurso }) {
           <BookOpen size={20} className="text-[#0a3d91]" />
           <h3 className="font-semibold text-lg text-[#0a1a3d]">{r.titulo}</h3>
         </div>
+
+        {/* Bookmark con lógica de favoritos */}
         <Bookmark
           size={20}
-          className="text-[#0a3d91] cursor-pointer hover:scale-110 transition-transform"
+          onClick={manejarFavorito}
+          className={`cursor-pointer hover:scale-110 transition-transform ${
+            esFavorito ? "text-yellow-500" : "text-[#0a3d91]"
+          }`}
         />
       </div>
 
