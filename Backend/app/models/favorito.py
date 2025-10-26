@@ -11,4 +11,5 @@ class Favorito(Base):
     agregadofecha = Column(DateTime(timezone=False), server_default=func.now())
 
     # Opcional: relaciones para navegar desde Favorito a Recurso / Usuario
-    recurso = relationship("Recurso", backref="favoritos", primaryjoin="Favorito.idrecurso==Recurso.idrecurso")
+    recurso = relationship("Recurso", back_populates="favoritos")
+    usuario = relationship("Usuario", back_populates="favoritos_usuario")

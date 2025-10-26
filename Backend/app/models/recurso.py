@@ -22,5 +22,7 @@ class Recurso(Base):
     recurso_autores = relationship("RecursoAutor", back_populates="recurso", cascade="all, delete, delete-orphan")
     recurso_temas = relationship("RecursoTema", back_populates="recurso", cascade="all, delete, delete-orphan")
     recurso_etiquetas = relationship("RecursoEtiqueta", back_populates="recurso", cascade="all, delete, delete-orphan")
+    favoritos = relationship("Favorito", back_populates="recurso")
+
 
 

@@ -1,7 +1,7 @@
 # app/routes/favorito.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
 
 from app.database import get_db
 from app.models.favorito import Favorito
@@ -10,6 +10,17 @@ from app.schemas.recurso import RecursoBase
 from app.schemas.favorito import FavoritoBase, FavoritoCreate
 from app.utils.auth import get_current_user_id  # ✅ usamos el helper central
 from app.schemas.recurso import RecursoOut
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import text
+from app.schemas.recurso import RecursoOut
+
+from app.models.recurso_autor import RecursoAutor
+from app.models.recurso_tema import RecursoTema
+from app.models.recurso_etiqueta import RecursoEtiqueta
+from app.models.autor import Autor
+from app.models.tema import Tema
+from app.models.etiqueta import Etiqueta
+
 router = APIRouter(
     prefix="/favoritos",
     tags=["Favoritos"]
@@ -70,17 +81,50 @@ def eliminar_favorito(
 # ============================================================
 # Listar favoritos del usuario
 # ============================================================
-@router.get("/", response_model=List[RecursoOut])
-def listar_favoritos(
-    idusuario: int = Depends(get_current_user_id),  # ✅ obtiene solo el idusuario
-    db: Session = Depends(get_db)
-):
-    favoritos = db.query(Favorito).filter(Favorito.idusuario == idusuario).all()
+@router.get("/", response_model=Dict[str, Any])
+def obtener_favoritos(db: Session = Depends(get_db), idusuario: int = Depends(get_current_user_id)):
+    """
+    Devuelve los recursos completos (con autores, temas, etiquetas) que el usuario ha marcado como favorito.
+    Usa la misma estrategia SQL que tu endpoint de búsqueda para garantizar formato idéntico.
+    """
+    # 1) IDs de recursos que son favoritos del usuario
+    fav_rows = db.query(Favorito.idrecurso).filter(Favorito.idusuario == idusuario).all()
+    ids_recurso = [r.idrecurso for r in fav_rows]
+    print("🎯 IDs de recursos favoritos:", ids_recurso)
+    if not ids_recurso:
+        return {"total": 0, "limit": 0, "offset": 0, "resultados": []}
 
-    if not favoritos:
-        return []  # sin favoritos = lista vacía (no error)
+    print("🧠 Usuario actual:", idusuario)
 
-    return [RecursoOut.from_orm(f.recurso) for f in favoritos]
+    # 2) Query tipo "buscar_recursos" pero filtrando solo por los ids seleccionados
+    base_query = """
+        SELECT r.*,
+            COALESCE(string_agg(DISTINCT a.nombreautor, ', '), '') AS autores,
+            COALESCE(string_agg(DISTINCT t.nombretema, ', '), '') AS temas,
+            COALESCE(string_agg(DISTINCT e.nombreetiqueta, ', '), '') AS etiquetas,
+            0 AS rank
+        FROM recurso r
+        LEFT JOIN recurso_autor ra ON r.idrecurso = ra.idrecurso
+        LEFT JOIN autor a ON ra.idautor = a.idautor
+        LEFT JOIN recurso_tema rt ON r.idrecurso = rt.idrecurso
+        LEFT JOIN tema t ON rt.idtema = t.idtema
+        LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso
+        LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta
+        WHERE r.idrecurso = ANY(:ids)
+        GROUP BY r.idrecurso
+        ORDER BY r.creadofecha DESC
+    """
+
+    params = {"ids": ids_recurso}
+    rows = db.execute(text(base_query), params).fetchall()
+    resultados = [dict(row._mapping) for row in rows]
+
+    return {
+        "total": len(resultados),
+        "limit": len(resultados),
+        "offset": 0,
+        "resultados": resultados
+    }
 
 
 # ============================================================

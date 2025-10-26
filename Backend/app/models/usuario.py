@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, TIMESTAMP, CheckConstraint, DateTime
 from app.database import Base
 from datetime import datetime
-
+from sqlalchemy.orm import relationship
 
 class Usuario(Base):
     __tablename__ = "usuario"  # nombre exacto en PostgreSQL (minúsculas)
@@ -20,3 +20,5 @@ class Usuario(Base):
     __table_args__ = (
         CheckConstraint("rol IN ('normal','docente','admin')", name="rol_check"),
     )
+    
+    favoritos_usuario = relationship("Favorito", back_populates="usuario")

@@ -79,12 +79,27 @@ export const buscarRecursos = async (params: BuscarParams | any = {}) => {
  * Obtener los favoritos del usuario autenticado
  */
 export const getFavoritos = async (token: string) => {
-  const resp = await API.get("/favoritos/", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return resp.data; // lista de favoritos
+  try {
+    const resp = await API.get("/favoritos/", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    console.log("🎯 [DEBUG] getFavoritos respuesta cruda:", resp.data);
+
+    // A veces viene como { resultados: [...] } y a veces como [...]
+    const data =
+      resp.data?.resultados && Array.isArray(resp.data.resultados)
+        ? resp.data.resultados
+        : Array.isArray(resp.data)
+        ? resp.data
+        : [];
+
+    console.log("📦 [DEBUG] getFavoritos datos procesados:", data);
+    return data;
+  } catch (err: any) {
+    console.error("💥 [ERROR] getFavoritos falló:", err);
+    return [];
+  }
 };
 
 /**
