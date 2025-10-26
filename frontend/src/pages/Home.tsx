@@ -1,3 +1,4 @@
+// src/pages/Home.tsx
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import SearchBar from "../components/SearchBar";

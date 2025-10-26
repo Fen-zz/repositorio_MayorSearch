@@ -1,5 +1,6 @@
+// src/pages/Login.tsx
 import { useState } from "react";
-import GoogleLoginButton from "../components/googleLoginButton";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 import { useAuth } from "../hooks/useAuth";
 import { loginManual } from "../services/authService";
 import { useNavigate } from "react-router-dom";

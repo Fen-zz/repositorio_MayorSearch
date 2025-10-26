@@ -1,3 +1,4 @@
+// src/components/ManualLoginButton.tsx
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { loginManual } from "../services/authService";

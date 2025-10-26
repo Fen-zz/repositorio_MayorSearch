@@ -1,3 +1,4 @@
+// src/hooks/useAuth.tsx
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 

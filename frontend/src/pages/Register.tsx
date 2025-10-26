@@ -1,5 +1,6 @@
+// src/pages/Register.tsx
 import { useState } from "react";
-import GoogleLoginButton from "../components/googleLoginButton";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 import { useNavigate } from "react-router-dom";
 import { registerManual } from "../services/authService"; // Asegúrate de tener esta función creada
 import { Link } from 'react-router-dom';

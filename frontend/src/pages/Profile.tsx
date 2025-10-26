@@ -1,3 +1,4 @@
+// src/pages/Profile.tsx
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import UserMenu from "../components/UserMenu";

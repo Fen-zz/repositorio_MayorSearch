@@ -1,4 +1,4 @@
-//import React from "react";
+// src/pages/Root.tsx
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Mail, MapPin, Phone} from "lucide-react";
 //import { useAuth } from "../hooks/useAuth";

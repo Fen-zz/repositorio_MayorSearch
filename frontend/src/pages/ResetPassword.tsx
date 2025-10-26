@@ -1,3 +1,4 @@
+// src/pages/ResetPassword.tsx
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "lucide-react";

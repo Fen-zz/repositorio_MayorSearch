@@ -1,3 +1,4 @@
+// src/pages/ForgotPassword.tsx
 import React, { useState } from "react";
 
 const ForgotPassword: React.FC = () => {
