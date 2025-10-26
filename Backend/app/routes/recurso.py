@@ -170,7 +170,16 @@ async def delete_recurso(recurso_id: int, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[RecursoOut])
 async def listar_recursos(db: Session = Depends(get_db)):
-    return db.query(Recurso).all()
+    recursos = db.query(Recurso).all()
+
+    # Ajustar las rutas de cada recurso
+    for recurso in recursos:
+        if recurso.archivo and recurso.archivo.rutaarchivo:
+            ruta = recurso.archivo.rutaarchivo.replace("\\", "/")
+            ruta_normalizada = ruta.replace("uploads/", "").lstrip("/")
+            recurso.archivo.rutaarchivo = f"http://localhost:8000/uploads/{ruta_normalizada}"
+
+    return recursos
 
 @router.get("/recursos/buscar", response_model=dict)
 def buscar_recursos(
@@ -340,6 +349,13 @@ async def obtener_recurso(recurso_id: int, db: Session = Depends(get_db)):
     recurso = db.query(Recurso).filter_by(idrecurso=recurso_id).first()
     if not recurso:
         raise HTTPException(status_code=404, detail="Recurso no encontrado")
+
+    # 🧠 Si tiene archivo asociado, construimos la URL pública
+    if recurso.archivo and recurso.archivo.rutaarchivo:
+        ruta = recurso.archivo.rutaarchivo.replace("\\", "/")
+        ruta_normalizada = ruta.replace("uploads/", "").lstrip("/")
+        recurso.archivo.rutaarchivo = f"http://localhost:8000/uploads/{ruta_normalizada}"
+
     return recurso
 
 @router.get("/{recurso_id}/detalle", response_model=dict)

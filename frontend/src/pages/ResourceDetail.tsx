@@ -1,3 +1,9 @@
+
+import { GlobalWorkerOptions } from "pdfjs-dist";
+
+// 🔧 Configurar el worker
+GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -10,6 +16,18 @@ import {
   FileText,
 } from "lucide-react";
 import { getRecursoDetalle } from "../services/recursoService";
+import { Document, Page} from "react-pdf";
+
+// =========================
+// Tipos
+// =========================
+type Archivo = {
+  idarchivo: number;
+  nombreoriginal?: string;
+  rutaarchivo?: string;
+  tipoarchivo?: string;
+  tamano?: number;
+};
 
 type RecursoDetalle = {
   idrecurso: number;
@@ -24,18 +42,28 @@ type RecursoDetalle = {
   etiquetas?: string;
   tiporecurso?: string;
   fechapublicacion?: string | null;
+  archivo?: Archivo;
 };
+
+// Configuración del worker de PDF.js
+
 
 export default function ResourceDetail() {
   const { id } = useParams<{ id: string }>();
   const [recurso, setRecurso] = useState<RecursoDetalle | null>(null);
 
   useEffect(() => {
-    if (!id) return;
-    getRecursoDetalle(Number(id))
-      .then((data) => setRecurso(data))
-      .catch((err) => console.error("Error cargando detalle:", err));
-  }, [id]);
+  if (!id) return;
+  getRecursoDetalle(Number(id))
+    .then((data) => {
+      console.log("🧩 Recurso recibido del backend:", data);
+      if (data.ubicacion) {
+        data.ubicacion = data.ubicacion.replace(/\\/g, "/");
+        }
+      setRecurso(data);
+    })
+    .catch((err) => console.error("Error cargando detalle:", err));
+}, [id]);
 
   if (!recurso) {
     return (
@@ -85,26 +113,57 @@ export default function ResourceDetail() {
 
       {/* Contenido principal */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Vista previa */}
+        {/* Vista previa del PDF y botón */}
         <div className="flex-1 bg-white shadow-md rounded-2xl p-6">
-          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm italic">
-            Vista previa del PDF (próximamente 👀)
-          </div>
-          <div className="mt-6 text-center">
-            {recurso.ubicacion && (
-              <a
-                href={recurso.ubicacion}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
-              >
-                <Download size={18} /> Descargar PDF
-              </a>
-            )}
-          </div>
-        </div>
+  <div className="bg-gray-100 rounded-lg flex flex-col items-center justify-center overflow-hidden p-4">
+    {recurso.ubicacion ? (
+  <>
 
-        {/* Resumen y metadatos (sin borde/sombra) */}
+  <div className="flex justify-center w-full">
+    <div className="flex flex-col items-center justify-center w-full max-h-[700px] overflow-y-auto rounded-lg bg-gray-100 p-4">
+  <Document
+    file={`http://localhost:8000/${recurso.ubicacion.replace(/\\/g, "/")}`}
+    onLoadError={(err) => {
+      console.error("❌ Error cargando PDF:", err.message);
+    }}
+    onLoadSuccess={({ numPages }) =>
+      console.log(`📄 PDF cargado con ${numPages} páginas`)
+    }
+    loading={
+      <div className="text-gray-500 py-10 italic">
+        Cargando vista previa del PDF...
+      </div>
+    }
+    className="flex flex-col items-center"
+  >
+    <Page
+      pageNumber={1}
+      width={Math.min(window.innerWidth * 0.8, 600)} // 🔧 ajusta el ancho según pantalla
+    />
+  </Document>
+</div>
+</div>
+    {/* Botón de descarga / visualización */}
+    <div className="mt-6 text-center">
+      <a
+        href={`http://localhost:8000/${recurso.ubicacion.replace(/\\/g, "/")}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+      >
+        <Download size={18} /> Ver / Descargar PDF
+      </a>
+    </div>
+  </>
+) : (
+  <div className="text-gray-400 italic py-20">
+    Sin vista previa disponible
+  </div>
+)}
+  </div>
+</div>
+
+        {/* Resumen y metadatos */}
         <div className="flex-1 rounded-2xl p-1">
           <h2 className="font-bold text-lg mb-3">Resumen</h2>
           <p className="text-sm leading-relaxed text-gray-700 mb-5">

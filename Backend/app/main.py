@@ -18,7 +18,7 @@ from app.routes import etiqueta as etiqueta_routes
 from app.routes import recurso_etiqueta as recurso_etiqueta_routes
 from app.routes import favorito as favorito_routes
 from app.routes import debug_token as debug_token_routes
-
+from fastapi.staticfiles import StaticFiles
 
 # Crea las tablas
 Base.metadata.create_all(bind=engine)
@@ -84,3 +84,4 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
+app.mount("/uploads/recursos", StaticFiles(directory="uploads/recursos"), name="recursos")
