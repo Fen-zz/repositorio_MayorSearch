@@ -72,7 +72,8 @@ export default function HomeRoot() {
                 <p className="mt-6 text-blue-100/90 text-3xl max-w-xl">
                   El conocimiento en orden y a la orden.
                 </p>
-
+                
+                <Link to="/Home">
                 <div className="mt-10">
                   <a
                     href="#"
@@ -85,6 +86,7 @@ export default function HomeRoot() {
                     </span>
                   </a>
                 </div>
+                </Link>
               </div>
             </div>
           </div>

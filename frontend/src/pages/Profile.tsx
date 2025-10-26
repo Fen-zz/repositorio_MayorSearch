@@ -143,15 +143,50 @@ export default function Profile() {
 
   const rolColor = getColorByRol(form.rol);
 
+
+const [showTop, setShowTop] = useState(true);
+
+// Ocultar el top cuando el usuario hace scroll hacia abajo
+useEffect(() => {
+  const scrollContainer =
+    document.querySelector(".scroll-area") || window; // si no hay scroll interno, escucha al window
+
+  let lastScrollTop = 0;
+
+  const onScroll = () => {
+    const currentScroll =
+      scrollContainer === window
+        ? window.scrollY
+        : (scrollContainer as HTMLElement).scrollTop;
+
+    const goingDown = currentScroll > lastScrollTop + 5; // margen para evitar falsos positivos
+
+    // Si baja, oculta; si sube o está arriba, muestra
+    setShowTop(!goingDown || currentScroll < 80);
+
+    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+  };
+
+  scrollContainer.addEventListener("scroll", onScroll, { passive: true });
+  return () =>
+    scrollContainer.removeEventListener("scroll", onScroll);
+}, []);
+
 return (
   <div className="min-h-screen bg-[#f8fafc] text-[#0a1a3d] flex overflow-hidden">
     {/* Sidebar con sincronización */}
     <Sidebar onCollapse={setIsCollapsed} />
 
     {/* UserMenu fijo arriba a la derecha */}
-    <div className="absolute top-6 right-8">
-      <UserMenu />
-    </div>
+      <div
+  className={`fixed top-6 right-8 z-9999 transition-all duration-500 ease-in-out transform ${
+    showTop
+      ? "opacity-100 translate-y-0"
+      : "opacity-0 -translate-y-6 pointer-events-none"
+  }`}
+>
+  <UserMenu />
+</div>
 
     {/* Contenedor principal */}
     <main
@@ -160,7 +195,7 @@ return (
       }`}
     >
       {/* 📜 Contenedor scrollable y con zoom controlado */}
-      <div className="overflow-y-auto h-[calc(100vh-40px)] w-full flex justify-center">
+      <div className="overflow-y-auto h-[calc(100vh-40px)] w-full flex justify-center scroll-area">
         <div
           className={`w-full max-w-3xl mt-20 transform transition-transform duration-500 ease-in-out ${
             isCollapsed ? "scale-120 " : "scale-110"

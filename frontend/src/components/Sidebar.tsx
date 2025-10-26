@@ -31,8 +31,8 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
   const navItems = [
     { to: "/", label: "Inicio", icon: Home },
     { to: "/materia", label: "Por materia", icon: BookOpen },
-    { to: "/perfil", label: "Mi perfil", icon: User },
-    { to: "/guardados", label: "Guardados", icon: Bookmark },
+    { to: "/profile", label: "Mi perfil", icon: User },
+    { to: "/profile", label: "Guardados", icon: Bookmark },
     { to: "/notificaciones", label: "Notificaciones", icon: Bell },
     { to: "/descargas", label: "Descargas", icon: Download },
     { to: "/ayuda", label: "Ayuda", icon: HelpCircle },
