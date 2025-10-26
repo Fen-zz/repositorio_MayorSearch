@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { addFavorito, removeFavorito, checkFavorito } from "../services/favoritosService"; // 🧩 NUEVO
 import { useAuth } from "../hooks/useAuth"; // 🧩 NUEVO
-
+import { Link } from "react-router-dom";
 import {
   FileText,
   Globe,
@@ -161,14 +161,12 @@ export default function ResourceCard({ r }: { r: Recurso }) {
       <div className="absolute bottom-4 right-5 flex gap-2">
         {r.ubicacion && (
           <>
-            <a
-              href={r.ubicacion}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1 bg-[#0a3d91] text-white text-xs px-3 py-1.5 rounded-md hover:bg-[#082e6a] transition shadow-sm"
+            <Link
+              to={`/recurso/${r.idrecurso}`}
+              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
             >
-              <Eye size={14} /> Ver
-            </a>
+              <Eye size={16} /> Ver detalles
+            </Link>
             <a
               href={r.ubicacion}
               download

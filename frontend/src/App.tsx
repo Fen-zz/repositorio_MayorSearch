@@ -1,12 +1,13 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "./pages/login";
+import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Root from "./pages/Root"; // Componente que se muestra en "/"
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
+import ResourceDetail from "./pages/ResourceDetail";
 
 function App() {
   return (
@@ -31,6 +32,8 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="/profile" element={<Profile />} />
+
+        <Route path="/recurso/:id" element={<ResourceDetail />} />
       </Routes>
     </BrowserRouter>
   );

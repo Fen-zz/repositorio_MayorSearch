@@ -342,3 +342,24 @@ async def obtener_recurso(recurso_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Recurso no encontrado")
     return recurso
 
+@router.get("/{recurso_id}/detalle", response_model=dict)
+def obtener_recurso_detalle(recurso_id: int, db: Session = Depends(get_db)):
+    query = """
+        SELECT r.*,
+            COALESCE(string_agg(DISTINCT a.nombreautor, ', '), '') AS autores,
+            COALESCE(string_agg(DISTINCT t.nombretema, ', '), '') AS temas,
+            COALESCE(string_agg(DISTINCT e.nombreetiqueta, ', '), '') AS etiquetas
+        FROM recurso r
+        LEFT JOIN recurso_autor ra ON r.idrecurso = ra.idrecurso
+        LEFT JOIN autor a ON ra.idautor = a.idautor
+        LEFT JOIN recurso_tema rt ON r.idrecurso = rt.idrecurso
+        LEFT JOIN tema t ON rt.idtema = t.idtema
+        LEFT JOIN recurso_etiqueta re ON r.idrecurso = re.idrecurso
+        LEFT JOIN etiqueta e ON re.idetiqueta = e.idetiqueta
+        WHERE r.idrecurso = :recurso_id
+        GROUP BY r.idrecurso
+    """
+    row = db.execute(text(query), {"recurso_id": recurso_id}).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Recurso no encontrado")
+    return dict(row._mapping)

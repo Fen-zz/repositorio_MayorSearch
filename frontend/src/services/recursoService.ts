@@ -129,3 +129,8 @@ export const removeFavorito = async (token: string, idrecurso: number) => {
   });
   return resp.data;
 };
+
+export async function getRecursoDetalle(idrecurso: number) {
+  const response = await API.get(`/recursos/${idrecurso}/detalle`);
+  return response.data;
+}
