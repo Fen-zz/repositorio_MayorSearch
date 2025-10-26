@@ -1,4 +1,3 @@
-// src/components/Sidebar.tsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -14,12 +13,20 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-export default function Sidebar() {
+interface SidebarProps {
+  onCollapse?: (collapsed: boolean) => void; // ✅ Agregamos la prop opcional
+}
+
+export default function Sidebar({ onCollapse }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
-  const toggleCollapse = () => setIsCollapsed(!isCollapsed);
+  const toggleCollapse = () => {
+    const newValue = !isCollapsed;
+    setIsCollapsed(newValue);
+    onCollapse?.(newValue); // ✅ Avisamos al padre (Home)
+  };
 
   const navItems = [
     { to: "/", label: "Inicio", icon: Home },
@@ -47,7 +54,7 @@ export default function Sidebar() {
         )}
       </button>
 
-      {/* Overlay (móvil) */}
+      {/* Overlay (solo móvil) */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-30 md:hidden"
@@ -59,14 +66,20 @@ export default function Sidebar() {
       <aside
         className={`fixed top-0 left-0 z-40 h-screen bg-white shadow-lg transition-all duration-300 ease-in-out
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        md:translate-x-0 md:static 
+        md:translate-x-0
         ${isCollapsed ? "md:w-20" : "md:w-64"}`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             {!isCollapsed && (
-              <Link to="/"><img src="/images/LogoMayorSearch.png" alt="Logo MayorSearch" className="w-40 object-contain"/></Link>
+              <Link to="/">
+                <img
+                  src="/images/LogoMayorSearch.png"
+                  alt="Logo MayorSearch"
+                  className="w-40 object-contain"
+                />
+              </Link>
             )}
             <button
               onClick={toggleCollapse}
