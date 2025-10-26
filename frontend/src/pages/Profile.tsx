@@ -143,25 +143,30 @@ export default function Profile() {
 
   const rolColor = getColorByRol(form.rol);
 
-  return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#0a1a3d] flex overflow-hidden">
-      {/* Sidebar con sincronización */}
-      <Sidebar onCollapse={setIsCollapsed} />
+return (
+  <div className="min-h-screen bg-[#f8fafc] text-[#0a1a3d] flex overflow-hidden">
+    {/* Sidebar con sincronización */}
+    <Sidebar onCollapse={setIsCollapsed} />
 
-        <div className="absolute top-6 right-8 z-9999">
-          <UserMenu />
-        </div>
+    {/* UserMenu fijo arriba a la derecha */}
+    <div className="absolute top-6 right-8">
+      <UserMenu />
+    </div>
 
-      {/* Animación igual al Home */}
-      <main
-        className={`flex-1 flex flex-col items-center justify-start relative transition-all duration-500 ease-in-out ${
-          isCollapsed ? "md:pl-20 scale-100 opacity-95" : "md:pl-64 scale-95 opacity-100"
-        }`}
-        style={{ transformOrigin: "center" }}
-      >
-        
-
-        <div className="w-full max-w-3xl mt-8 transition-all duration-500 ease-in-out">
+    {/* Contenedor principal */}
+    <main
+      className={`flex-1 flex flex-col items-center justify-start relative transition-all duration-500 ease-in-out ${
+        isCollapsed ? "md:pl-20" : "md:pl-64"
+      }`}
+    >
+      {/* 📜 Contenedor scrollable y con zoom controlado */}
+      <div className="overflow-y-auto h-[calc(100vh-40px)] w-full flex justify-center">
+        <div
+          className={`w-full max-w-3xl mt-20 transform transition-transform duration-500 ease-in-out ${
+            isCollapsed ? "scale-120 " : "scale-110"
+          }`}
+          style={{ transformOrigin: "center top" }}
+        >
           <div className="bg-white shadow-lg rounded-2xl p-8 relative transition-all duration-500 hover:scale-[1.02]">
             {/* Ícono de usuario */}
             <div className="flex items-center mb-6">
@@ -188,6 +193,7 @@ export default function Profile() {
                   {form.rol?.charAt(0).toUpperCase() + form.rol?.slice(1)}
                 </div>
               </div>
+
               {/* Botón de edición */}
               <button
                 onClick={() => setEditando(!editando)}
@@ -236,12 +242,13 @@ export default function Profile() {
           <h2 className="text-2xl font-bold text-[#0a3d91] mt-10 mb-4">
             Mis recursos favoritos
           </h2>
+
           {loading ? (
             <p className="text-gray-500 text-center animate-pulse">
-               Cargando favoritos...
+              Cargando favoritos...
             </p>
           ) : favoritos.length > 0 ? (
-            <div 
+            <div
               className={`space-y-6 transition-all duration-500 ease-in-out ${
                 isCollapsed ? "scale-102 opacity-90" : "scale-100 opacity-100"
               }`}
@@ -256,9 +263,10 @@ export default function Profile() {
             </p>
           )}
         </div>
-      </main>
-    </div>
-  );
+      </div>
+    </main>
+  </div>
+);
 }
 
 function InputField({ label, name, value, onChange }: any) {
