@@ -170,7 +170,7 @@ export default function Explorar() {
                 </div>
                 <div className="mt-4">
                   <Link
-                    to="/analisis-numerico"
+                    to="/analisisnumerico"
                     className="inline-flex items-center gap-2 text-[#7a1212] font-medium hover:underline"
                   >
                     Explorar <ArrowRight size={16} />

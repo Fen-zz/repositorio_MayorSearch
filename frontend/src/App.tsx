@@ -10,7 +10,7 @@ import Profile from "./pages/Profile";
 import ResourceDetail from "./pages/ResourceDetail";
 import Explorar from "./pages/Explorar"
 import TeoriaDeGrafos from "./pages/TeoriaDeGrafos"; 
-
+import AnalisisNumerico from "./pages/AnalisisNumerico"; 
 function App() {
   return (
     <BrowserRouter>
@@ -40,6 +40,8 @@ function App() {
         <Route path="/explorar" element={<Explorar />} />
 
         <Route path="/teoriadegrafos" element={<TeoriaDeGrafos />} />
+
+        <Route path="/analisisnumerico" element={<AnalisisNumerico />} />
       </Routes>
     </BrowserRouter>
   );
