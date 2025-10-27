@@ -7,7 +7,7 @@ import {
   User,
   Bookmark,
   Home,
-  BookOpen,
+  Compass,
   Bell,
   Download,
   Settings,
@@ -31,7 +31,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
 
   const navItems = [
     { to: "/", label: "Inicio", icon: Home },
-    { to: "/materia", label: "Por materia", icon: BookOpen },
+    { to: "/explorar", label: "Explorar", icon: Compass },
     { to: "/profile", label: "Mi perfil", icon: User },
     { to: "/profile", label: "Guardados", icon: Bookmark },
     { to: "/notificaciones", label: "Notificaciones", icon: Bell },

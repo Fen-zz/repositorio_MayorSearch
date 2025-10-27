@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import ResourceDetail from "./pages/ResourceDetail";
+import Explorar from "./pages/Explorar"
 
 function App() {
   return (
@@ -34,6 +35,8 @@ function App() {
         <Route path="/profile" element={<Profile />} />
 
         <Route path="/recurso/:id" element={<ResourceDetail />} />
+
+        <Route path="/explorar" element={<Explorar />} />
       </Routes>
     </BrowserRouter>
   );
