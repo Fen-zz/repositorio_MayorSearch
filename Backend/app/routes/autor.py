@@ -7,6 +7,9 @@ from app import models, schemas
 from app.schemas import autor as autor_schema
 from app.models import autor as autor_model
 
+from app.models import recurso_autor, recurso
+from app.schemas import recurso as recurso_schema
+
 router = APIRouter(
     prefix="/autores",
     tags=["Autores"]
@@ -62,3 +65,22 @@ def eliminar_autor(idautor: int, db: Session = Depends(get_db)):
     db.delete(autor)
     db.commit()
     return {"mensaje": f"Autor con ID {idautor} eliminado correctamente."}
+
+# Obtener los recursos asociados a un autor
+@router.get("/{idautor}/recursos", response_model=List[schemas.recurso.RecursoOut])
+def obtener_recursos_por_autor(idautor: int, db: Session = Depends(get_db)):
+    autor = db.query(models.autor.Autor).filter(models.autor.Autor.idautor == idautor).first()
+    if not autor:
+        raise HTTPException(status_code=404, detail="Autor no encontrado")
+
+    # 🔍 Obtener todos los recurso_autor donde idautor coincida
+    relaciones = (
+        db.query(models.recurso_autor.RecursoAutor)
+        .filter(models.recurso_autor.RecursoAutor.idautor == idautor)
+        .all()
+    )
+
+    # Extraer los recursos asociados
+    recursos = [rel.recurso for rel in relaciones if rel.recurso is not None]
+
+    return recursos

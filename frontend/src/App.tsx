@@ -11,6 +11,9 @@ import ResourceDetail from "./pages/ResourceDetail";
 import Explorar from "./pages/Explorar"
 import TeoriaDeGrafos from "./pages/TeoriaDeGrafos"; 
 import AnalisisNumerico from "./pages/AnalisisNumerico"; 
+import Autores from "./pages/Autores"; 
+import ProfileAutor from "./pages/ProfileAutor";
+
 function App() {
   return (
     <BrowserRouter>
@@ -42,6 +45,10 @@ function App() {
         <Route path="/teoriadegrafos" element={<TeoriaDeGrafos />} />
 
         <Route path="/analisisnumerico" element={<AnalisisNumerico />} />
+
+        <Route path="/autores" element={<Autores />} />
+
+        <Route path="/autores/:id" element={<ProfileAutor />} />
       </Routes>
     </BrowserRouter>
   );
