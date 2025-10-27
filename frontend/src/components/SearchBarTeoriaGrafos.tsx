@@ -63,12 +63,18 @@ export default function SearchBarTeoriaGrafos({
     .filter(Boolean)
     .join(",");
 
+  // 🎯 Traducción del idioma (igual que en el buscador central)
+  let idiomaCode = "";
+  if (filters.idioma === "Español") idiomaCode = "es";
+  else if (filters.idioma === "Inglés") idiomaCode = "en";
+  else if (filters.idioma === "Otro...") idiomaCode = "otro";
+
   const params: any = {
     q: q.trim() || "",
     etiquetas: etiquetasCombined,
     tipo: filters.tipo || undefined,
     nivel: filters.nivel || undefined,
-    idioma: filters.idioma || undefined,
+    idioma: idiomaCode || undefined, // 👈 ahora sí correcto
   };
 
   if (fechaInicio && fechaFin) {
@@ -212,48 +218,51 @@ export default function SearchBarTeoriaGrafos({
 
                   <div className="flex justify-end mt-3">
                     <button
-                      onClick={() => {
-                        if (fechaInicio && fechaFin) {
-                          const filtrosAplicados = {
-                            ...filters,
-                            fecha: "rango",
-                            fecha_inicio: fechaInicio.toISOString().split("T")[0],
-                            fecha_fin: fechaFin.toISOString().split("T")[0],
-                          };
+                        onClick={() => {
+                            if (fechaInicio && fechaFin) {
+                            const filtrosAplicados = {
+                                ...filters,
+                                fecha: "rango",
+                                fecha_inicio: fechaInicio.toISOString().split("T")[0],
+                                fecha_fin: fechaFin.toISOString().split("T")[0],
+                            };
 
-                          setFilters(filtrosAplicados);
+                            setFilters(filtrosAplicados);
 
-                          // Construimos etiquetas combinadas incluyendo la obligatoria
-                          const etiquetasActuales = filtrosAplicados.etiquetas
-                            ? String(filtrosAplicados.etiquetas).trim()
-                            : "";
-                          const etiquetasCombined = [etiquetasActuales, "Teoria de grafos"]
-                            .map((s) => s?.trim())
-                            .filter(Boolean)
-                            .join(",");
+                            // 🧠 Traducción del idioma (igual que en handleSubmit)
+                            let idiomaCode = "";
+                            if (filtrosAplicados.idioma === "Español") idiomaCode = "es";
+                            else if (filtrosAplicados.idioma === "Inglés") idiomaCode = "en";
+                            else if (filtrosAplicados.idioma === "Otro...") idiomaCode = "otro";
 
-                          const params: any = {
-                            q: q.trim() || undefined,
-                            etiquetas: etiquetasCombined,
-                            tipo: filtrosAplicados.tipo || undefined,
-                            nivel: filtrosAplicados.nivel || undefined,
-                            idioma: filtrosAplicados.idioma || undefined,
-                            fecha_inicio: filtrosAplicados.fecha_inicio,
-                            fecha_fin: filtrosAplicados.fecha_fin,
-                          };
+                            // 🎯 Etiquetas combinadas (tipo, nivel y asignatura fija)
+                            const etiquetasActuales = filtrosAplicados.etiquetas
+                                ? String(filtrosAplicados.etiquetas).trim()
+                                : "";
+                            const etiquetasCombined = [etiquetasActuales, "Teoria de grafos"]
+                                .map((s) => s?.trim())
+                                .filter(Boolean)
+                                .join(",");
 
-                          console.log(
-                            "📤 Aplicando filtro de fecha y enviando params:",
-                            params
-                          );
+                            const params: any = {
+                                q: q.trim() || undefined,
+                                etiquetas: etiquetasCombined,
+                                tipo: filtrosAplicados.tipo || undefined,
+                                nivel: filtrosAplicados.nivel || undefined,
+                                idioma: idiomaCode || undefined, // 👈 ahora se traduce correctamente
+                                fecha_inicio: filtrosAplicados.fecha_inicio,
+                                fecha_fin: filtrosAplicados.fecha_fin,
+                            };
 
-                          onSearch(params);
-                        }
-                        setMostrarCalendario(false);
-                      }}
-                      className="bg-[#0f5d38] text-white text-sm px-3 py-1 rounded-md hover:opacity-90"
-                    >
-                      Aplicar
+                            console.log("📤 Aplicando filtro de fecha (Teoría de Grafos):", params);
+
+                            onSearch(params);
+                            }
+                            setMostrarCalendario(false);
+                        }}
+                        className="bg-[#0f5d38] text-white text-sm px-3 py-1 rounded-md hover:opacity-90"
+                        >
+                        Aplicar
                     </button>
                   </div>
                 </div>
