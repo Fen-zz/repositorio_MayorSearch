@@ -9,6 +9,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import ResourceDetail from "./pages/ResourceDetail";
 import Explorar from "./pages/Explorar"
+import TeoriaDeGrafos from "./pages/TeoriaDeGrafos"; 
 
 function App() {
   return (
@@ -37,6 +38,8 @@ function App() {
         <Route path="/recurso/:id" element={<ResourceDetail />} />
 
         <Route path="/explorar" element={<Explorar />} />
+
+        <Route path="/teoriadegrafos" element={<TeoriaDeGrafos />} />
       </Routes>
     </BrowserRouter>
   );

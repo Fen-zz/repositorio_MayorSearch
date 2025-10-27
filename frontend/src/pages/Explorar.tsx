@@ -134,7 +134,7 @@ export default function Explorar() {
                 </div>
                 <div className="mt-4">
                   <Link
-                    to="/teoria-de-grafos"
+                    to="/teoriadegrafos"
                     className="inline-flex items-center gap-2 text-[#0f5d38] font-medium hover:underline"
                   >
                     Explorar <ArrowRight size={16} />
