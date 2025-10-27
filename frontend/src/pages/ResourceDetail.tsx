@@ -1,8 +1,5 @@
-
-import { GlobalWorkerOptions } from "pdfjs-dist";
-
-// 🔧 Configurar el worker
-GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+import { pdfjs } from "react-pdf";
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
@@ -120,28 +117,32 @@ export default function ResourceDetail() {
   <>
 
   <div className="flex justify-center w-full">
-    <div className="flex flex-col items-center justify-center w-full max-h-[700px] overflow-y-auto rounded-lg bg-gray-100 p-4">
-  <Document
-    file={`http://localhost:8000/${recurso.ubicacion.replace(/\\/g, "/")}`}
-    onLoadError={(err) => {
-      console.error("❌ Error cargando PDF:", err.message);
-    }}
-    onLoadSuccess={({ numPages }) =>
-      console.log(`📄 PDF cargado con ${numPages} páginas`)
-    }
-    loading={
-      <div className="text-gray-500 py-10 italic">
-        Cargando vista previa del PDF...
-      </div>
-    }
-    className="flex flex-col items-center"
-  >
-    <Page
-      pageNumber={1}
-      width={Math.min(window.innerWidth * 0.8, 600)} // 🔧 ajusta el ancho según pantalla
-    />
-  </Document>
-</div>
+  <div className="flex flex-col items-center justify-center 
+                  w-full max-w-[550px] max-h-[650px]
+                  overflow-y-auto bg-gray-100 rounded-xl shadow-inner p-4">
+    <Document
+      file={`http://localhost:8000/${recurso.ubicacion.replace(/\\/g, "/")}`}
+      renderMode="canvas"
+      loading={
+        <div className="text-gray-500 py-10 italic">
+          Cargando vista previa del PDF...
+        </div>
+      }
+      onLoadError={(err) => console.error("❌ Error PDF:", err.message)}
+      onLoadSuccess={({ numPages }) =>
+        console.log(`✅ PDF cargado con ${numPages} páginas`)
+      }
+      className="flex flex-col items-center"
+    >
+      <Page
+        pageNumber={1}
+        width={500}
+        renderTextLayer={false}   // Desactiva el texto flotante (mejor para ver imágenes)
+        renderAnnotationLayer={false} // Quita bordes azules de links, etc.
+        renderMode="canvas"
+      />
+    </Document>
+  </div>
 </div>
     {/* Botón de descarga / visualización */}
     <div className="mt-6 text-center">
