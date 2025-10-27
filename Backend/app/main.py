@@ -84,4 +84,41 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
-app.mount("/uploads/recursos", StaticFiles(directory="uploads/recursos"), name="recursos")
+
+from fastapi.responses import FileResponse, Response
+from fastapi import HTTPException, Request
+import os
+
+# ✅ Ruta única y controlada para servir PDFs con CORS permitido
+@app.get("/uploads/recursos/{filename}")
+async def serve_pdf(filename: str, request: Request):
+    file_path = os.path.join("uploads/recursos", filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+    response = FileResponse(file_path, media_type="application/pdf")
+
+    # CORS manual (flexible y sin bloqueos)
+    origin = request.headers.get("origin")
+    if origin in ["http://localhost:5173", "http://127.0.0.1:5173"]:
+        response.headers["Access-Control-Allow-Origin"] = origin
+    else:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+
+    response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+
+    return response
+
+
+# ✅ Preflight OPTIONS (para que el navegador no se ponga intenso)
+@app.options("/uploads/recursos/{filename}")
+async def options_pdf(filename: str):
+    return Response(status_code=200, headers={
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+    })
+
