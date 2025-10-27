@@ -1,3 +1,4 @@
+// src/components/ResourceDetail.tsx
 import { pdfjs } from "react-pdf";
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -235,18 +236,6 @@ export default function ResourceDetail() {
         </div>
       </div>
 
-      {/* Comentarios */}
-      <div className="mt-10 bg-white shadow-md rounded-2xl p-5">
-        <h2 className="font-bold text-lg mb-3">Comentarios</h2>
-        <div className="flex items-center bg-gray-50 rounded-xl p-2 border border-gray-200">
-          <User className="text-gray-400 ml-2" />
-          <input
-            type="text"
-            placeholder="Escribe un comentario..."
-            className="flex-1 px-3 py-2 outline-none text-sm bg-transparent"
-          />
-        </div>
-      </div>
     </div>
   );
 }
