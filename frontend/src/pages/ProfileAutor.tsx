@@ -12,7 +12,7 @@ export default function ProfileAutor() {
   const { id } = useParams(); // 👈 viene desde /autores/:id
   const { user, token } = useAuth();
 
-  const [autor, setAutor] = useState<any>(null); // ✅ Corregido
+  const [autor, setAutor] = useState<any>(null);
   const [recursos, setRecursos] = useState<any[]>([]);
   const [editando, setEditando] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -40,7 +40,16 @@ export default function ProfileAutor() {
         });
 
         const dataRecursos = await AutorService.getRecursosByAutor(Number(id));
-        setRecursos(dataRecursos || []);
+
+        // ✅ Ajuste: añadir autores, temas y etiquetas para ResourceCard
+        const recursosFormateados = (dataRecursos || []).map((r: any) => ({
+          ...r,
+          autores: dataAutor?.nombreautor || "",
+          temas: r.temas || "",
+          etiquetas: r.etiquetas || "",
+        }));
+
+        setRecursos(recursosFormateados);
       } catch (err) {
         console.error("[ERROR] No se pudo obtener autor o recursos:", err);
       } finally {
