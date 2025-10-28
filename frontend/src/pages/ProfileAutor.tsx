@@ -1,4 +1,3 @@
-// src/pages/ProfileAutor.tsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
@@ -6,14 +5,18 @@ import UserMenu from "../components/UserMenu";
 import ResourceCard from "../components/ResourceCard";
 import { useAuth } from "../hooks/useAuth";
 import AutorService from "../services/autorService";
-import { Edit3, UserCircle2 } from "lucide-react";
+import { Edit3, Search, ArrowUpAZ, ArrowDownAZ } from "lucide-react";
 
 export default function ProfileAutor() {
-  const { id } = useParams(); // 👈 viene desde /autores/:id
+  const { id } = useParams();
   const { user, token } = useAuth();
 
   const [autor, setAutor] = useState<any>(null);
   const [recursos, setRecursos] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [ordenAsc, setOrdenAsc] = useState(true);
+
   const [editando, setEditando] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,7 +27,20 @@ export default function ProfileAutor() {
   });
 
   // ---------------------------
-  // Cargar datos del autor
+  // Util: ordenar recursos por "titulo" (el correcto)
+  // ---------------------------
+  const sortResources = (arr: any[], asc: boolean) => {
+    return [...arr].sort((a, b) => {
+      const ta = (a?.titulo ?? "").toString();
+      const tb = (b?.titulo ?? "").toString();
+      return asc
+        ? ta.localeCompare(tb, "es", { sensitivity: "base" })
+        : tb.localeCompare(ta, "es", { sensitivity: "base" });
+    });
+  };
+
+  // ---------------------------
+  // Cargar datos del autor + recursos
   // ---------------------------
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +57,7 @@ export default function ProfileAutor() {
 
         const dataRecursos = await AutorService.getRecursosByAutor(Number(id));
 
-        // ✅ Ajuste: añadir autores, temas y etiquetas para ResourceCard
+        // Formateamos para que coincida con lo que usa ResourceCard
         const recursosFormateados = (dataRecursos || []).map((r: any) => ({
           ...r,
           autores: dataAutor?.nombreautor || "",
@@ -49,7 +65,9 @@ export default function ProfileAutor() {
           etiquetas: r.etiquetas || "",
         }));
 
-        setRecursos(recursosFormateados);
+        const ordenadosInicial = sortResources(recursosFormateados, ordenAsc);
+        setRecursos(ordenadosInicial);
+        setFiltered(ordenadosInicial);
       } catch (err) {
         console.error("[ERROR] No se pudo obtener autor o recursos:", err);
       } finally {
@@ -57,10 +75,36 @@ export default function ProfileAutor() {
       }
     };
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // ---------------------------
-  // Manejar cambios en formulario
+  // Filtrado por nombre del recurso (usando 'titulo')
+  // ---------------------------
+  useEffect(() => {
+    const term = busqueda.trim().toLowerCase();
+    if (!term) {
+      setFiltered(sortResources(recursos, ordenAsc));
+    } else {
+      const filtrados = recursos.filter((r) =>
+        (r?.titulo ?? "").toString().toLowerCase().includes(term)
+      );
+      setFiltered(sortResources(filtrados, ordenAsc));
+    }
+  }, [busqueda, recursos, ordenAsc]);
+
+  // ---------------------------
+  // Alternar orden A-Z / Z-A
+  // ---------------------------
+  const toggleOrden = () => {
+    const nuevoOrdenAsc = !ordenAsc;
+    setOrdenAsc(nuevoOrdenAsc);
+    setFiltered((prev) => sortResources(prev, nuevoOrdenAsc));
+    setRecursos((prev) => sortResources(prev, nuevoOrdenAsc));
+  };
+
+  // ---------------------------
+  // Manejar cambios en el formulario
   // ---------------------------
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -82,7 +126,6 @@ export default function ProfileAutor() {
 
       await AutorService.update(Number(id), form);
 
-      // ✅ Refrescar autor con los datos nuevos
       const dataAutorActualizado = await AutorService.getById(Number(id));
       setAutor(dataAutorActualizado);
 
@@ -94,24 +137,22 @@ export default function ProfileAutor() {
     }
   };
 
-  // ---------------------------
-  // Mostrar solo si el usuario es admin
-  // ---------------------------
   const esAdmin =
     typeof user === "object" && user !== null && "rol" in user
       ? (user as any).rol === "admin"
       : false;
 
+  // ---------------------------
+  // Render
+  // ---------------------------
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0a1a3d] flex overflow-hidden">
       <Sidebar onCollapse={setIsCollapsed} />
 
-      {/* UserMenu fijo arriba a la derecha */}
       <div className="fixed top-6 right-8 z-9999">
         <UserMenu />
       </div>
 
-      {/* Contenido principal */}
       <main
         className={`flex-1 flex flex-col items-center justify-start transition-all duration-500 ${
           isCollapsed ? "md:pl-20" : "md:pl-64"
@@ -122,22 +163,8 @@ export default function ProfileAutor() {
             {/* Tarjeta principal */}
             <div className="bg-white shadow-lg rounded-2xl p-8 relative hover:scale-[1.02] transition">
               <div className="flex items-center mb-6">
-                {autor?.profileurl ? (
-                  <img
-                    src={autor.profileurl}
-                    alt={autor.nombreautor}
-                    className="w-[90px] h-[90px] rounded-full object-cover border border-gray-300 mr-4"
-                  />
-                ) : (
-                  <UserCircle2
-                    size={90}
-                    className="mr-4 text-[#0f5d38]"
-                    strokeWidth={1.5}
-                  />
-                )}
-
                 <div>
-                  <h1 className="text-3xl font-bold text-[#0f5d38]">
+                  <h1 className="text-3xl font-bold text-[#8a6b12]">
                     {autor?.nombreautor || "Autor"}
                   </h1>
                   <p className="text-sm text-gray-600">
@@ -148,18 +175,16 @@ export default function ProfileAutor() {
                   </p>
                 </div>
 
-                {/* ✏️ Solo visible si es admin */}
                 {esAdmin && (
                   <button
                     onClick={() => setEditando(!editando)}
-                    className="absolute top-6 right-6 text-[#0a3d91] hover:text-[#082e70] transition"
+                    className="absolute top-6 right-6 text-[#8a6b12] hover:text-[#6c540c] transition"
                   >
                     <Edit3 size={22} />
                   </button>
                 )}
               </div>
 
-              {/* Campos editables (solo admin) */}
               {editando && esAdmin && (
                 <div className="mt-4 border-t pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -185,7 +210,7 @@ export default function ProfileAutor() {
                   <div className="flex justify-end mt-6">
                     <button
                       onClick={handleGuardar}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                      className="bg-[#8a6b12] text-white px-4 py-2 rounded-lg hover:bg-[#6c540c] transition"
                     >
                       Guardar cambios
                     </button>
@@ -195,17 +220,52 @@ export default function ProfileAutor() {
             </div>
 
             {/* ---- Recursos del autor ---- */}
-            <h2 className="text-2xl font-bold text-[#0f5d38] mt-10 mb-4">
-              Recursos de este autor
-            </h2>
+            <div className="mt-10 mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <h2 className="text-2xl font-bold text-[#8a6b12]">
+                Recursos de este autor
+              </h2>
+
+              {/* 🔍 Barra de búsqueda y ordenamiento */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={toggleOrden}
+                  className="flex items-center gap-2 text-[#8a6b12] font-semibold border border-[#8a6b12] rounded-md px-3 py-2 hover:bg-[#8a6b12] hover:text-white transition"
+                  aria-label="Alternar orden A-Z Z-A"
+                >
+                  {ordenAsc ? (
+                    <>
+                      <ArrowUpAZ size={18} /> A-Z
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownAZ size={18} /> Z-A
+                    </>
+                  )}
+                </button>
+
+                <div className="relative">
+                  <Search
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Buscar recurso..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    className="pl-9 pr-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8a6b12] transition w-48"
+                  />
+                </div>
+              </div>
+            </div>
 
             {loading ? (
               <p className="text-gray-500 text-center animate-pulse">
                 Cargando recursos...
               </p>
-            ) : recursos.length > 0 ? (
+            ) : filtered.length > 0 ? (
               <div className="space-y-6">
-                {recursos.map((r) => (
+                {filtered.map((r) => (
                   <ResourceCard key={r.idrecurso} r={r} />
                 ))}
               </div>
@@ -230,7 +290,7 @@ function InputField({ label, name, value, onChange }: any) {
         name={name}
         value={value ?? ""}
         onChange={onChange}
-        className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-green-400 outline-none"
+        className="w-full border rounded-lg p-2 mt-1 focus:ring-2 focus:ring-[#8a6b12] outline-none"
       />
     </div>
   );

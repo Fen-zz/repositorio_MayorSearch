@@ -1,6 +1,6 @@
 // src/components/AuthorCard.tsx
 import { Link } from "react-router-dom";
-import { UserCircle2, BookOpen, ExternalLink } from "lucide-react";
+import { BookOpen, ExternalLink } from "lucide-react"; // 🧹 Eliminado UserCircle2 (ya no se usa)
 import { useEffect, useState } from "react";
 import autorService from "../services/autorService";
 import type { Autor, RecursoAutor } from "../services/autorService";
@@ -28,42 +28,31 @@ export default function AuthorCard({ autor }: Props) {
   return (
     <div
       key={autor.idautor}
-      className="relative border border-gray-200 rounded-xl bg-white hover:shadow-lg transition-all p-5"
+      className="relative border border-gray-200 rounded-xl bg-white hover:shadow-lg transition-all p-5 text-[#8a6b12]" // 🟡 color principal dorado
     >
-      {/* Cabecera del autor */}
-      <div className="flex items-center gap-3 mb-3">
-        {autor.profileurl ? (
-          <img
-            src={autor.profileurl}
-            alt={autor.nombreautor}
-            className="w-14 h-14 rounded-full object-cover border border-gray-300"
-          />
-        ) : (
-          <UserCircle2 size={56} className="text-[#0f5d38]" />
+      {/* 🧱 Cabecera del autor (foto eliminada) */}
+      <div className="mb-3">
+        <h3 className="font-bold text-xl truncate">{autor.nombreautor}</h3>
+        {autor.orcid && (
+          <p className="text-sm flex items-center gap-1 mt-1 truncate max-w-full overflow-hidden text-[#8a6b12]">
+            <ExternalLink size={14} />
+            ORCID:&nbsp;
+            <a
+              href={`https://orcid.org/${autor.orcid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium hover:underline text-[#8a6b12] break-all"
+              style={{ wordBreak: "break-word" }} // 🆕 Evita que ORCID muy largo se desborde
+            >
+              {autor.orcid}
+            </a>
+          </p>
         )}
-        <div>
-          <h3 className="font-semibold text-lg text-[#0f5d38]">
-            {autor.nombreautor}
-          </h3>
-          {autor.orcid && (
-            <p className="text-sm text-gray-600 flex items-center gap-1">
-              <ExternalLink size={14} /> ORCID:{" "}
-              <a
-                href={`https://orcid.org/${autor.orcid}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-green-700 hover:underline"
-              >
-                {autor.orcid}
-              </a>
-            </p>
-          )}
-        </div>
       </div>
 
-      {/* Cantidad de recursos */}
-      <div className="flex items-center gap-2 text-sm text-gray-700 mb-3">
-        <BookOpen size={16} className="text-green-700" />
+      {/* 📚 Cantidad de recursos */}
+      <div className="flex items-center gap-2 text-sm text-[#8a6b12] mb-4">
+        <BookOpen size={16} />
         {recursos.length > 0 ? (
           <span>
             {recursos.length} recurso{recursos.length > 1 ? "s" : ""} asociado
@@ -73,11 +62,11 @@ export default function AuthorCard({ autor }: Props) {
         )}
       </div>
 
-      {/* Botón de perfil */}
+      {/* 🔗 Botón de perfil */}
       <div className="flex justify-end">
         <Link
           to={`/autores/${autor.idautor}`}
-          className="inline-flex items-center gap-1 border border-[#0f5d38] text-[#0f5d38] text-xs px-3 py-1.5 rounded-md hover:bg-green-50 transition shadow-sm"
+          className="inline-flex items-center gap-1 border border-[#8a6b12] text-[#8a6b12] text-xs px-3 py-1.5 rounded-md hover:bg-[#8a6b12] hover:text-white transition shadow-sm"
         >
           <ExternalLink size={14} /> Ver perfil
         </Link>

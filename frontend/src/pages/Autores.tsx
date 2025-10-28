@@ -4,7 +4,7 @@ import UserMenu from "../components/UserMenu";
 import AuthorCard from "../components/AuthorCard";
 import AutorService from "../services/autorService";
 import type { Autor } from "../services/autorService";
-import { Search } from "lucide-react";
+import { Search, ArrowUpAZ, ArrowDownAZ } from "lucide-react"; // 🆕 agregado para íconos de ordenamiento
 
 export default function Autores() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -12,6 +12,7 @@ export default function Autores() {
   const [autores, setAutores] = useState<Autor[]>([]);
   const [filtered, setFiltered] = useState<Autor[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [ordenAsc, setOrdenAsc] = useState(true); // 🆕 estado para controlar el orden asc/desc
 
   // 🎢 Mostrar/ocultar el UserMenu igual que en Explorar
   useEffect(() => {
@@ -60,6 +61,18 @@ export default function Autores() {
     }
   }, [busqueda, autores]);
 
+  // 🆕 Función para alternar orden alfabético
+  const toggleOrden = () => {
+    const nuevoOrdenAsc = !ordenAsc;
+    setOrdenAsc(nuevoOrdenAsc);
+    const ordenados = [...filtered].sort((a, b) =>
+      nuevoOrdenAsc
+        ? a.nombreautor.localeCompare(b.nombreautor, "es", { sensitivity: "base" })
+        : b.nombreautor.localeCompare(a.nombreautor, "es", { sensitivity: "base" })
+    );
+    setFiltered(ordenados);
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#0a1a3d] flex overflow-hidden">
       {/* Sidebar sincronizada */}
@@ -92,33 +105,53 @@ export default function Autores() {
             {/* Breadcrumb */}
             <div className="text-sm text-[#8a6b12] mb-2">Inicio / Autores</div>
 
-            {/* Título y barra de búsqueda */}
-            <div className="flex justify-between items-center mb-8">
+            {/* Título, barra de búsqueda y botón de ordenamiento */}
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
               <h1 className="text-4xl font-bold text-[#8a6b12] transition-all duration-500">
                 Autores
               </h1>
-              <div className="relative">
-                <Search
-                  size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Buscar autor..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="pl-9 pr-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8a6b12] transition w-48"
-                />
+
+              <div className="flex items-center gap-4">
+                {/* 🆕 Botón para alternar orden */}
+                <button
+                  onClick={toggleOrden}
+                  className="flex items-center gap-2 text-[#8a6b12] font-semibold border border-[#8a6b12] rounded-md px-3 py-2 hover:bg-[#8a6b12] hover:text-white transition"
+                >
+                  {ordenAsc ? (
+                    <>
+                      <ArrowUpAZ size={18} /> A-Z
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownAZ size={18} /> Z-A
+                    </>
+                  )}
+                </button>
+
+                {/* Barra de búsqueda */}
+                <div className="relative">
+                  <Search
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Buscar autor..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    className="pl-9 pr-3 py-2 text-sm border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#8a6b12] transition w-48"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Grid de autores */}
+            {/* Grid de autores (🆕 ajustado a 2 columnas para una distribución más equilibrada) */}
             {filtered.length === 0 ? (
               <div className="text-center text-gray-600 mt-12">
                 No se encontraron autores.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pb-10">
                 {filtered.map((autor) => (
                   <AuthorCard key={autor.idautor} autor={autor} />
                 ))}
