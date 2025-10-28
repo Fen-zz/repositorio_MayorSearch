@@ -131,9 +131,16 @@ export default function TeoriaDeGrafos() {
               </div>
             )}
 
-            {/* ---> Frase-enlace discreta que pide el usuario */}
-            <div className="mt-3 mb-6 text-sm text-[#0f5d38] ml-1">
-            ¿Quieres navegar por <Link to="/recursosteoriadegrafos" className="font-semibold underline">todos los recursos de Teoría de grafos</Link>?
+            {/* ---> Frase-enlace discreta centrada */}
+            <div className="mt-3 mb-6 text-sm text-[#0f5d38] text-center">
+              ¿Quieres navegar por todos los recursos de{" "}
+              <Link
+                to="/recursosteoriadegrafos"
+                className="font-semibold underline hover:text-[#0f5d38] transition-colors"
+              >
+                Teoría de grafos
+              </Link>
+              ?
             </div>
 
             {/* Resultados */}

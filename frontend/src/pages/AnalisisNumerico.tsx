@@ -4,7 +4,7 @@ import UserMenu from "../components/UserMenu";
 import ResourceCard from "../components/ResourceCard";
 import SearchBarAnalisisNumerico from "../components/SearchBarAnalisisNumerico";
 import { buscarRecursos } from "../services/recursoService";
-
+import { Link } from "react-router-dom";
 export default function AnalisisNumerico() {
   const [resultados, setResultados] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,6 +127,18 @@ export default function AnalisisNumerico() {
                 </h2>
               </div>
             )}
+
+            {/* ---> Frase-enlace discreta centrada */}
+            <div className="mt-3 mb-6 text-sm text-[#7B0C0C] text-center">
+              ¿Quieres navegar por todos los recursos de{" "}
+              <Link
+                to="/recursosanalisisnumerico"
+                className="font-semibold underline hover:text-[#a4161a] transition-colors"
+              >
+                Análisis numérico
+              </Link>
+              ?
+            </div>
 
             {/* Resultados */}
             <div className="mt-6">
