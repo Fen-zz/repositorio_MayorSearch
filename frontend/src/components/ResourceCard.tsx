@@ -7,7 +7,6 @@ import {
   FileText,
   Globe,
   CheckCircle,
-  Download,
   Eye,
   Users,
   Tag,
@@ -167,13 +166,6 @@ export default function ResourceCard({ r }: { r: Recurso }) {
             >
               <Eye size={16} /> Ver detalles
             </Link>
-            <a
-              href={r.ubicacion}
-              download
-              className="flex items-center gap-1 border border-[#0a3d91] text-[#0a3d91] text-xs px-3 py-1.5 rounded-md hover:bg-blue-50 transition shadow-sm"
-            >
-              <Download size={14} /> Descargar
-            </a>
           </>
         )}
       </div>

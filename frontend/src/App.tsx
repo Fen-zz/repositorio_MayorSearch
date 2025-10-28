@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import ResourceDetail from "./pages/ResourceDetail";
 import Explorar from "./pages/Explorar"
 import TeoriaDeGrafos from "./pages/TeoriaDeGrafos"; 
+import RecursosTeoriaGrafos from "./pages/RecursosTeoriaGrafos"; 
 import AnalisisNumerico from "./pages/AnalisisNumerico"; 
 import Autores from "./pages/Autores"; 
 import ProfileAutor from "./pages/ProfileAutor";
@@ -43,6 +44,8 @@ function App() {
         <Route path="/explorar" element={<Explorar />} />
 
         <Route path="/teoriadegrafos" element={<TeoriaDeGrafos />} />
+
+        <Route path="/recursosteoriadegrafos" element={<RecursosTeoriaGrafos />} />
 
         <Route path="/analisisnumerico" element={<AnalisisNumerico />} />
 

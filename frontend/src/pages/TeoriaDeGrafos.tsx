@@ -5,7 +5,7 @@ import UserMenu from "../components/UserMenu";
 import ResourceCard from "../components/ResourceCard";
 import SearchBarTeoriaGrafos from "../components/SearchBarTeoriaGrafos";
 import { buscarRecursos } from "../services/recursoService";
-
+import { Link } from "react-router-dom";
 export default function TeoriaDeGrafos() {
   const [resultados, setResultados] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -130,6 +130,11 @@ export default function TeoriaDeGrafos() {
                 </h2>
               </div>
             )}
+
+            {/* ---> Frase-enlace discreta que pide el usuario */}
+            <div className="mt-3 mb-6 text-sm text-[#0f5d38] ml-1">
+            ¿Quieres navegar por <Link to="/recursosteoriadegrafos" className="font-semibold underline">todos los recursos de Teoría de grafos</Link>?
+            </div>
 
             {/* Resultados */}
             <div className="mt-6">
