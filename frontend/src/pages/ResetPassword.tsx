@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { Link } from 'react-router-dom';
 
 const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -59,13 +60,16 @@ const ResetPassword: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#0f1a2b] text-white">
-      <div className="flex flex-col items-center mb-8">
+      <Link to="/">
+         <div className="flex flex-col items-center mb-8">
         <img
-          src="/images/LogoMayorSearch.png"
+          src="/images/LogoMayorSearch2.png"
           alt="Logo MayorSearch"
           className="w-70 object-contain cursor-pointer"
         />
-      </div>
+      </div>     
+      </Link>
+      
 
       <div className="bg-[#162840] rounded-2xl p-10 w-[400px] text-center shadow-lg">
         <h2 className="text-xl font-semibold mb-8">

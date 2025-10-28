@@ -40,20 +40,84 @@ export default function Register() {
       {/* Navbar superior simulada */}
       <nav className="flex items-center justify-between px-16 py-6 text-[#bcd0f7]">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="MayorSearch" className="w-6 h-6" />
-          <span className="font-semibold text-white text-lg">MayorSearch</span>
+          <Link to="/">
+              <img
+                src="/images/LogoMayorSearch2.png"
+                alt="Logo MayorSearch"
+                className="w-40 object-contain cursor-pointer"
+              />
+            </Link>
+          
         </div>
 
         <ul className="flex items-center gap-8 text-sm">
-          <li className="hover:text-white cursor-pointer"><Link to="/">INICIO</Link></li>
-          <li className="hover:text-white cursor-pointer">RECURSOS ⌄</li>
-          <li className="hover:text-white cursor-pointer">AUTORES ⌄</li>
-          <li className="hover:text-white cursor-pointer"><Link to="#contacto">CONTÁCTANOS</Link></li>
+          <Link to="/" className="font-semibold hover:text-white transition-colors">
+              INICIO
+            </Link>
+
+            <Link to="/explorar" className="hover:text-white transition-colors">
+              EXPLORAR
+            </Link>
+
+            <Link to="/autores" className="hover:text-white transition-colors">
+              AUTORES
+            </Link>
+
+            {/* ASIGNATURAS (click para desplegar) */}
+            <details className="relative">
+              <summary className="flex items-center gap-1 hover:text-white transition-colors list-none">
+                ASIGNATURAS
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 mt-[2px]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+
+              {/* Dropdown fijo */}
+              <div className="absolute left-0 mt-2 w-56 bg-white border border-blue-100 rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="px-4 py-2 border-b border-blue-100 text-xs font-semibold text-blue-600 uppercase">
+                  Busca recursos por asignatura
+                </div>
+
+                <Link
+                  to="/teoriadegrafos"
+                  className="block px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
+                >
+                  Teoría de grafos
+                </Link>
+
+                <Link
+                  to="/analisisnumerico"
+                  className="block px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
+                >
+                  Análisis numérico
+                </Link>
+              </div>
+            </details>
+
+            <Link
+              to="/home"
+              className="hover:text-white transition-colors"
+            >
+              BUSCAR
+            </Link>
+
+            <a className="hover:text-white transition-colors" href="/">
+              CONTÁCTANOS
+            </a>
           <li className="text-white font-semibold cursor-pointer">
             REGISTRARSE
           </li>
-          <li className="hover:text-white cursor-pointer"><Link to="/login">INICIAR SESIÓN</Link></li>
+          <li className="hover:text-white cursor-pointer">
+             <Link to="/login">INICIAR SESIÓN</Link>
+          </li>
         </ul>
+
       </nav>
 
       {/* Contenedor del formulario */}

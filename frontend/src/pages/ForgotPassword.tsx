@@ -1,6 +1,6 @@
 // src/pages/ForgotPassword.tsx
 import React, { useState } from "react";
-
+import { Link } from 'react-router-dom';
 const ForgotPassword: React.FC = () => {
   const [input, setInput] = useState("");
   const [mensaje, setMensaje] = useState("");
@@ -32,13 +32,15 @@ const ForgotPassword: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#0f1a2b] text-white">
       {/* Logo */}
-      <div className="flex flex-col items-center mb-8">
+      <Link to="/">
+         <div className="flex flex-col items-center mb-8">
         <img
-          src="/images/LogoMayorSearch.png"
+          src="/images/LogoMayorSearch2.png"
           alt="Logo MayorSearch"
           className="w-70 object-contain cursor-pointer"
         />
-      </div>
+      </div>     
+      </Link>
 
       {/* Card principal */}
       <div className="bg-[#162840] rounded-2xl p-10 w-[400px] text-center shadow-lg">

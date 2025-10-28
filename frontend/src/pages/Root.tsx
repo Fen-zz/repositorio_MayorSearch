@@ -12,9 +12,9 @@ export default function HomeRoot() {
     <div className="min-h-screen w-full bg-white text-blue-50">
       {/* Header */}
       <header className="w-full bg-white text-blue-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto px-18 py-4 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <Link to="/">
               <img
                 src="/images/LogoMayorSearch.png"
@@ -24,29 +24,70 @@ export default function HomeRoot() {
             </Link>
           </div>
 
-          {/* Nav links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a className="font-semibold text-blue-800" href="#">INICIO</a>
-            <a className="text-blue-700/80" href="#">RECURSOS ▾</a>
-            <a className="text-blue-700/80" href="#">AUTORES ▾</a>
-            <div className="relative">
-              <input
-                aria-label="Buscar"
-                className="w-64 h-9 rounded-full border border-blue-200 px-4 text-sm outline-none"
-                placeholder="Buscar..."
-              />
-            </div>
-          </nav>
+          {/* Nav links unificados */}
+          <nav className="hidden md:flex items-center gap-10 text-sm">
+            <Link to="/" className="font-semibold text-blue-800 hover:text-blue-900 transition-colors">
+              INICIO
+            </Link>
 
-          {/* Right links */}
-          <div className="hidden md:flex items-center gap-6 text-sm">
-            <a className="text-blue-700/90" href="#contacto">
+            <Link to="/explorar" className="text-blue-700/80 hover:text-blue-800 transition-colors">
+              EXPLORAR
+            </Link>
+
+            <Link to="/autores" className="text-blue-700/80 hover:text-blue-800 transition-colors">
+              AUTORES
+            </Link>
+
+            {/* ASIGNATURAS (click para desplegar) */}
+            <details className="relative">
+              <summary className="flex items-center gap-1 text-blue-700/80 cursor-pointer hover:text-blue-800 transition-colors list-none">
+                ASIGNATURAS
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 mt-[2px]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+
+              {/* Dropdown fijo */}
+              <div className="absolute left-0 mt-2 w-56 bg-white border border-blue-100 rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="px-4 py-2 border-b border-blue-100 text-xs font-semibold text-blue-600 uppercase">
+                  Busca recursos por asignatura
+                </div>
+
+                <Link
+                  to="/teoriadegrafos"
+                  className="block px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
+                >
+                  Teoría de grafos
+                </Link>
+
+                <Link
+                  to="/analisisnumerico"
+                  className="block px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
+                >
+                  Análisis numérico
+                </Link>
+              </div>
+            </details>
+
+            <Link
+              to="/home"
+              className="text-blue-700/80 hover:text-blue-800 transition-colors"
+            >
+              BUSCAR
+            </Link>
+
+            <a className="text-blue-700/80 hover:text-blue-800 transition-colors" href="#contacto">
               CONTÁCTANOS
             </a>
-            <div className="hidden md:flex items-center gap-6 text-sm">
-              <UserMenu />
-            </div>
-          </div>
+
+            <UserMenu />
+          </nav>
         </div>
       </header>
 
@@ -209,29 +250,25 @@ export default function HomeRoot() {
           </Link>
         </li>
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
-            Recursos
-          </a>
+          <Link to="/explorar" className="hover:text-yellow-400 transition">
+            Explorar
+          </Link>
         </li>
+        
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
-            Autores
-          </a>
-        </li>
-        <li>
-          <a href="#" className="hover:text-yellow-400 transition">
+          <a href="#contacto" className="hover:text-yellow-400 transition">
             Contáctanos
           </a>
         </li>
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
+          <Link to="/register" className="hover:text-yellow-400 transition">
             Registrarse
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
-            Iniciar Sesión
-          </a>
+          <Link to="/login" className="hover:text-yellow-400 transition">
+            Iniciar sesión
+          </Link>
         </li>
       </ul>
     </div>
@@ -242,29 +279,24 @@ export default function HomeRoot() {
       <div className="border-t border-gray-600/40 mb-3 w-3/4" />
       <ul className="space-y-2">
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
-            Búsqueda
-          </a>
+          <Link to="/Home" className="hover:text-yellow-400 transition">
+            Buscar
+          </Link>
         </li>
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
+          <Link to="/teoriadegrafos" className="hover:text-yellow-400 transition">
             Teoría de grafos
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
+          <Link to="/analisisnumerico" className="hover:text-yellow-400 transition">
             Análisis numérico
-          </a>
+          </Link>
         </li>
         <li>
-          <a href="#" className="hover:text-yellow-400 transition">
+          <Link to="/autores" className="hover:text-yellow-400 transition">
             Autores
-          </a>
-        </li>
-        <li>
-          <a href="#" className="hover:text-yellow-400 transition">
-            Recursos
-          </a>
+          </Link>
         </li>
       </ul>
     </div>
