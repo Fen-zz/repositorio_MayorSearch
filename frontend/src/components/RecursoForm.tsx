@@ -27,10 +27,22 @@ export default function RecursoForm() {
       (async () => {
         try {
           const data = await recursoCrudService.getById(Number(id));
-          setFormData(data);
+
+          // 💬 Normalizamos el idioma
+          let idiomaNormalizado = data.idioma;
+          if (data.idioma === "Español") idiomaNormalizado = "es";
+          else if (data.idioma === "Inglés") idiomaNormalizado = "en";
+          else if (!["es", "en", "otro"].includes(data.idioma))
+            idiomaNormalizado = "otro";
+
+          setFormData({
+            ...data,
+            idioma: idiomaNormalizado || "",
+          });
+
           setPreviewFile(data.archivo?.ruta_archivo || null);
         } catch (error) {
-          alert("Error al cargar el recurso 😵");
+          alert("Error al cargar el recurso");
         }
       })();
     }
@@ -38,9 +50,14 @@ export default function RecursoForm() {
 
   // ✅ Manejar cambios en campos (corregido para checkbox)
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
-    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    const target = e.target as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement;
     const { name, value, type } = target;
     const fieldValue =
       type === "checkbox" ? (target as HTMLInputElement).checked : value;
@@ -65,7 +82,7 @@ export default function RecursoForm() {
     e.preventDefault();
 
     if (!formData.titulo || !formData.tiporecurso || !formData.idioma) {
-      alert("Por favor completa todos los campos obligatorios 🙏");
+      alert("Por favor completa todos los campos obligatorios");
       return;
     }
 
@@ -73,15 +90,15 @@ export default function RecursoForm() {
     try {
       if (id) {
         await recursoCrudService.update(Number(id), formData, file || undefined);
-        alert("Recurso actualizado correctamente ✨");
+        alert("Recurso actualizado correctamente");
       } else {
         await recursoCrudService.create(formData, file || undefined);
-        alert("Recurso creado con éxito 🎉");
+        alert("Recurso creado con éxito");
       }
       navigate("/admin/recursos");
     } catch (error) {
       console.error(error);
-      alert("Error al guardar el recurso 😭");
+      alert("Error al guardar el recurso");
     } finally {
       setLoading(false);
     }
@@ -89,30 +106,32 @@ export default function RecursoForm() {
 
   return (
     <div className="flex flex-col items-center justify-start min-h-screen bg-gray-50 p-6">
-      <div className="w-full max-w-2xl bg-white shadow-md rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">
-            {id ? "✏️ Editar Recurso" : "🆕 Nuevo Recurso"}
+      <div className="w-full max-w-2xl bg-white shadow-lg rounded-2xl p-8 border border-gray-100">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-blue-700">
+            {id ? "Editar Recurso" : "Nuevo Recurso"}
           </h1>
 
           <button
             onClick={() => navigate("/admin/recursos")}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            className="flex items-center gap-2 text-gray-600 hover:text-blue-700 transition"
           >
             <ArrowLeft className="w-4 h-4" /> Volver
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Título */}
           <div>
-            <label className="block font-semibold mb-1">Título *</label>
+            <label className="block font-semibold mb-1 text-gray-700">
+              Título *
+            </label>
             <input
               type="text"
               name="titulo"
               value={formData.titulo || ""}
               onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
               placeholder="Título del recurso"
               required
             />
@@ -120,25 +139,29 @@ export default function RecursoForm() {
 
           {/* Descripción */}
           <div>
-            <label className="block font-semibold mb-1">Descripción</label>
+            <label className="block font-semibold mb-1 text-gray-700">
+              Descripción
+            </label>
             <textarea
               name="descripcion"
               value={formData.descripcion || ""}
               onChange={handleChange}
               rows={3}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
               placeholder="Describe brevemente el contenido..."
             />
           </div>
 
           {/* Tipo de recurso */}
           <div>
-            <label className="block font-semibold mb-1">Tipo de recurso *</label>
+            <label className="block font-semibold mb-1 text-gray-700">
+              Tipo de recurso *
+            </label>
             <select
               name="tiporecurso"
               value={formData.tiporecurso || ""}
               onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
               required
             >
               <option value="">Seleccionar tipo...</option>
@@ -151,50 +174,57 @@ export default function RecursoForm() {
 
           {/* Idioma */}
           <div>
-            <label className="block font-semibold mb-1">Idioma *</label>
+            <label className="block font-semibold mb-1 text-gray-700">
+              Idioma *
+            </label>
             <select
               name="idioma"
               value={formData.idioma || ""}
               onChange={handleChange}
-              className="w-full border rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
               required
             >
               <option value="">Seleccionar idioma...</option>
-              <option value="Español">Español</option>
-              <option value="Inglés">Inglés</option>
-              <option value="Francés">Francés</option>
+              <option value="es">Español</option>
+              <option value="en">Inglés</option>
+              <option value="otro">Otro</option>
             </select>
           </div>
 
-          {/* Verificado (solo admin o docente, con tipo seguro) */}
+          {/* Verificado (solo admin o docente) */}
           {typeof user === "object" &&
             (user?.rol === "admin" || user?.rol === "docente") && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-2">
                 <input
                   type="checkbox"
                   name="verificado"
                   checked={!!formData.verificado}
                   onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-400"
                 />
-                <label className="font-semibold">Recurso verificado</label>
+                <label className="font-semibold text-gray-700">
+                  Recurso verificado
+                </label>
               </div>
             )}
 
           {/* Subida de archivo */}
           <div>
-            <label className="block font-semibold mb-1">Archivo PDF</label>
+            <label className="block font-semibold mb-1 text-gray-700">
+              Archivo PDF
+            </label>
             <div className="flex items-center gap-3">
               <input
                 type="file"
                 accept="application/pdf"
                 onChange={handleFileChange}
-                className="block w-full text-sm text-gray-600 border rounded-lg cursor-pointer"
+                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
               />
               <FileUp className="text-blue-600 w-6 h-6" />
             </div>
 
             {previewFile && (
-              <div className="mt-3 border rounded-lg overflow-hidden">
+              <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                 <iframe
                   src={previewFile}
                   className="w-full h-64"
@@ -209,7 +239,7 @@ export default function RecursoForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-lg transition disabled:opacity-50"
+              className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50 shadow-md"
             >
               <Save className="w-5 h-5" />
               {loading ? "Guardando..." : id ? "Actualizar" : "Guardar"}
