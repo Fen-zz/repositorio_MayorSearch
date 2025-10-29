@@ -134,6 +134,40 @@ export default function HomeRoot() {
         </div>
       </main>
 
+      {/* === ACERCA DE NOSOTROS === */}
+      <section
+        id="acerca"
+        className="bg-white text-blue-900 py-20 border-t border-blue-100"
+      >
+        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+          {/* Texto */}
+          <div>
+            <h2 className="text-4xl font-extrabold mb-6 text-blue-950">
+              Acerca de MayorSearch
+            </h2>
+            <p className="text-lg leading-relaxed text-blue-800/90">
+              Este repositorio reúne y organiza recursos académicos relacionados
+              con <strong>Teoría de Grafos</strong> y{" "}
+              <strong>Análisis Numérico</strong>, con el propósito de facilitar
+              el acceso a materiales de estudio, proyectos y referencias útiles
+              para estudiantes y docentes. Nuestro objetivo es ofrecer un
+              espacio estructurado y confiable donde el conocimiento pueda
+              compartirse, fortaleciendo el aprendizaje y la colaboración en
+              estas áreas.
+            </p>
+          </div>
+
+          {/* Imagen */}
+          <div className="flex justify-center">
+            <img
+              src="/images/bicentenario.png"
+              alt="Acerca de nosotros"
+              className="w-full max-w-lg rounded-2xl shadow-lg border border-blue-100"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* === CONTÁCTANOS === */}
       <section id="contacto" className="bg-gray-50 text-blue-900">
         <div className="max-w-5xl mx-auto px-6 py-16 text-center">
@@ -199,7 +233,7 @@ export default function HomeRoot() {
     {/* Columna 1 - Logo e info */}
     <div>
       <img
-        src="/images/LogoMayorSearch.png"
+        src="/images/LogoMayorSearch2.png"
         alt="Logo MayorSearch"
         className="w-48 mb-4"
       />
