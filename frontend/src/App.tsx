@@ -15,6 +15,9 @@ import AnalisisNumerico from "./pages/AnalisisNumerico";
 import RecursosAnalisisNumerico from "./pages/RecursosAnalisisNumerico";
 import Autores from "./pages/Autores"; 
 import ProfileAutor from "./pages/ProfileAutor";
+import RecursoCRUD from "./pages/RecursoCRUD";
+import RecursoForm from "./components/RecursoForm";
+import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
   return (
@@ -55,6 +58,34 @@ function App() {
         <Route path="/autores" element={<Autores />} />
 
         <Route path="/autores/:id" element={<ProfileAutor />} />
+
+<Route
+  path="/admin/recursos"
+  element={
+    <PrivateRoute roles={["admin", "docente"]}>
+      <RecursoCRUD />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/admin/recursos/nuevo"
+  element={
+    <PrivateRoute roles={["admin", "docente"]}>
+      <RecursoForm />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/admin/recursos/editar/:id"
+  element={
+    <PrivateRoute roles={["admin", "docente"]}>
+      <RecursoForm />
+    </PrivateRoute>
+  }
+/>
+
       </Routes>
     </BrowserRouter>
   );
