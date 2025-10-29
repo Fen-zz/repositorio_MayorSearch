@@ -41,3 +41,17 @@ def eliminar_vinculo(id: int, db: Session = Depends(get_db)):
     db.delete(vinculo)
     db.commit()
     return
+
+@router.delete("/{idrecurso}/{idautor}")
+def eliminar_vinculo_por_ids(idrecurso: int, idautor: int, db: Session = Depends(get_db)):
+    """
+    Elimina la relación entre un recurso y un autor
+    usando ambos IDs (idrecurso e idautor).
+    """
+    vinculo = db.query(RecursoAutor).filter_by(idrecurso=idrecurso, idautor=idautor).first()
+    if not vinculo:
+        raise HTTPException(status_code=404, detail="Vínculo no encontrado")
+
+    db.delete(vinculo)
+    db.commit()
+    return {"mensaje": "Vínculo eliminado correctamente"}

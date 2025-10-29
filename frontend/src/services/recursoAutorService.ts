@@ -21,8 +21,8 @@ const RecursoAutorService = {
   },
 
   // Eliminar vínculo por ID único (en tu backend se elimina por {id})
-  async delete(id: number) {
-    const res = await API.delete(`/recurso_autor/${id}`);
+  async delete(idrecurso: number, idautor: number) {
+    const res = await API.delete(`/recurso_autor/${idrecurso}/${idautor}`);
     return res.data;
   },
 };

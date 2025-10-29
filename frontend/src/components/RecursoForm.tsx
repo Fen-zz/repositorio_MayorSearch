@@ -5,6 +5,7 @@ import type { Recurso } from "../services/recursoCrudService";
 import RecursoEtiquetaService, {
   type RecursoEtiqueta,
 } from "../services/recursoEtiquetaService";
+import RecursoAutorService, { type RecursoAutor } from "../services/recursoAutorService";
 import API from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { Save, FileUp, ArrowLeft } from "lucide-react";
@@ -29,6 +30,12 @@ export default function RecursoForm() {
   const [etiquetas, setEtiquetas] = useState<{ idetiqueta: number; nombreetiqueta: string }[]>([]);
   const [selectedEtiquetas, setSelectedEtiquetas] = useState<number[]>([]);
 
+  // 🟢 Estados para autores
+  const [autores, setAutores] = useState<{ idautor: number; nombre: string }[]>([]);
+  const [searchAutor, setSearchAutor] = useState("");
+const [selectedAutores, setSelectedAutores] = useState<{ idautor: number; nombre: string }[]>([]);
+
+
   // ✅ Cargar etiquetas desde la BD
   useEffect(() => {
     (async () => {
@@ -40,6 +47,25 @@ export default function RecursoForm() {
       }
     })();
   }, []);
+
+  // ✅ Buscar autores mientras se escribe
+useEffect(() => {
+  const fetchAutores = async () => {
+    if (searchAutor.trim().length < 2) return; // Solo busca si hay al menos 2 letras
+    try {
+      const res = await API.get(`/autores/?q=${searchAutor}`);
+      setAutores(
+  (res.data || []).map((a: any) => ({
+    idautor: a.idautor,
+    nombre: a.nombre || a.nombreautor || "Sin nombre",
+  }))
+);
+    } catch (error) {
+      console.error("Error buscando autores:", error);
+    }
+  };
+  fetchAutores();
+}, [searchAutor]);
 
   // ✅ Cargar recurso existente si estamos editando
   useEffect(() => {
@@ -71,6 +97,28 @@ export default function RecursoForm() {
         } catch (error) {
           alert("Error al cargar el recurso");
         }
+
+        // 🟢 Cargar autores asociados (versión con nombres)
+try {
+  const [allLinksAutor, resAutores] = await Promise.all([
+    RecursoAutorService.getAll(),
+    API.get("/autores/"),
+  ]);
+
+  const autoresAsociados = allLinksAutor
+  .filter((link: RecursoAutor) => link.idrecurso === Number(id))
+  .map((link: { idautor: any }) => {
+    const autor = resAutores.data.find((a: any) => a.idautor === link.idautor);
+    return autor
+      ? { idautor: autor.idautor, nombre: autor.nombre || autor.nombreautor }
+      : { idautor: link.idautor, nombre: `Autor #${link.idautor}` };
+  });
+
+  setSelectedAutores(autoresAsociados);
+} catch (error) {
+  console.error("Error cargando autores asociados:", error);
+}
+
       })();
     }
   }, [id]);
@@ -159,6 +207,23 @@ export default function RecursoForm() {
         }
       }
 
+      // 🟢 Vincular autores seleccionados
+        if (selectedAutores.length > 0) {
+        const idrecurso = id ? Number(id) : recursoCreado.idrecurso;
+        const allLinksAutor = await RecursoAutorService.getAll();
+
+        // Borrar vínculos previos si estamos editando
+        const actuales = allLinksAutor.filter((l: RecursoAutor) => l.idrecurso === idrecurso);
+        for (const vinculo of actuales) {
+        await RecursoAutorService.delete(vinculo.idrecurso, vinculo.idautor);
+        }
+
+        // Agregar los nuevos autores seleccionados
+        for (const autor of selectedAutores) {
+        await RecursoAutorService.add({ idrecurso, idautor: autor.idautor });
+        }
+        }
+
       navigate("/admin/recursos");
     } catch (error) {
       console.error(error);
@@ -242,7 +307,7 @@ export default function RecursoForm() {
                 name="fechapublicacion"
                 value={formData.fechapublicacion || ""}
                 onChange={handleChange}
-                placeholder="2025/10/29"
+                placeholder="(YYYY-MM-DD)"
                 pattern="\d{4}-\d{2}-\d{2}"
                 className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
             />
@@ -266,6 +331,65 @@ export default function RecursoForm() {
               <option value="otro">Otro</option>
             </select>
           </div>
+            
+            {/* 🟢 Autores */}
+            <div>
+            <label className="block font-semibold mb-1 text-gray-700">
+                Autores
+            </label>
+
+            {/* Input para buscar autores */}
+            <input
+                type="text"
+                value={searchAutor}
+                onChange={(e) => setSearchAutor(e.target.value)}
+                placeholder="Buscar autores..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+            />
+
+            {/* Lista de sugerencias */}
+            {searchAutor && autores.length > 0 && (
+                <div className="border border-gray-200 rounded-lg mt-1 bg-white shadow-md max-h-40 overflow-y-auto">
+                {autores.map((a) => (
+                    <div
+                    key={a.idautor}
+                    onClick={() => {
+                    if (!selectedAutores.some((sel) => sel.idautor === a.idautor)) {
+                        setSelectedAutores((prev) => [...prev, { idautor: a.idautor, nombre: a.nombre }]);
+                    }
+                    setSearchAutor("");
+                    }}
+                    className="px-3 py-2 cursor-pointer text-gray-800 hover:bg-blue-100 hover:text-blue-800 transition"
+                    >
+                    {a.nombre}
+                    </div>
+                ))}
+                </div>
+            )}
+
+            {/* Autores seleccionados */}
+<div className="flex flex-wrap gap-2 mt-2">
+  {selectedAutores.map((a) => (
+  <span
+    key={a.idautor}
+    className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+  >
+    {a.nombre}
+    <button
+      type="button"
+      onClick={() =>
+        setSelectedAutores((prev) => prev.filter((x) => x.idautor !== a.idautor))
+      }
+      className="text-red-500 hover:text-red-700 ml-1"
+    >
+      ✕
+    </button>
+  </span>
+))}
+</div>
+            </div>
+
+
 
           {/* 🟢 Selector múltiple de etiquetas mejorado y ordenado */}
             <div>
