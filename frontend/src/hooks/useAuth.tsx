@@ -16,6 +16,7 @@ interface AuthContextType {
   rol: string | null;
   token: string | null;
   isAuthenticated: boolean;
+  loading: boolean; // 🧩 NUEVO
   login: (user: User | string, rol: string, token: string) => void;
   logout: () => void;
 }
@@ -26,35 +27,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | string | null>(null);
   const [rol, setRol] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true); // 🧩 NUEVO
 
-  // ✅ Carga la sesión guardada (compatibilidad total)
   useEffect(() => {
     const storedToken = localStorage.getItem("access_token");
     const storedUser = localStorage.getItem("user");
     const storedRol = localStorage.getItem("rol");
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setRol(storedRol);
+    if (storedToken && storedUser && storedRol) {
+  setToken(storedToken);
+  setRol(storedRol);
 
-      try {
-        // Si es un objeto JSON válido, lo parsea
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      } catch {
-        // Si no, deja el string (caso login por Google)
-        setUser(storedUser);
-      }
-    }
+  try {
+    const parsedUser =
+      typeof storedUser === "string" && storedUser.startsWith("{")
+        ? JSON.parse(storedUser)
+        : { nombreusuario: storedUser, rol: storedRol };
+    setUser(parsedUser);
+  } catch {
+    setUser({ nombreusuario: storedUser, rol: storedRol });
+  }
+}
+    setLoading(false); // 🧩 Marcamos que ya terminó la carga
   }, []);
 
-  // ✅ Guarda sesión (sin romper login por Google)
   const login = (user: User | string, rol: string, token: string) => {
     localStorage.setItem("access_token", token);
-    localStorage.setItem(
-      "user",
-      typeof user === "string" ? user : JSON.stringify(user)
-    );
+    localStorage.setItem("user", typeof user === "string" ? user : JSON.stringify(user));
     localStorage.setItem("rol", rol);
     setUser(user);
     setRol(rol);
@@ -74,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, rol, token, isAuthenticated, login, logout }}
+      value={{ user, rol, token, isAuthenticated, loading, login, logout }}
     >
       {children}
     </AuthContext.Provider>

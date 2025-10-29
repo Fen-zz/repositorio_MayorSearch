@@ -25,7 +25,7 @@ export default function Login() {
       localStorage.setItem("access_token", resp.data.access_token);
 
       // Mantiene tu flujo actual
-      login(resp.data.usuario, resp.data.rol, resp.data.access_token);
+     login(resp.data.usuario, resp.data.usuario.rol, resp.data.access_token);
 
       alert("Inicio de sesión exitoso ✅");
       navigate("/home");

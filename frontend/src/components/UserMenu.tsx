@@ -35,7 +35,11 @@ export default function UserMenu() {
       <details className="relative">
         <summary className="flex items-center gap-2 text-blue-800 font-semibold list-none cursor-pointer hover:text-blue-900 transition-colors">
           <User size={18} />
-          <span>{user as React.ReactNode}</span>
+          <span>
+            {typeof user === "object"
+              ? user?.nombreusuario || "Usuario"
+              : user || "Invitado"}
+          </span>
           <ChevronDown size={16} />
         </summary>
 
@@ -61,15 +65,13 @@ export default function UserMenu() {
       </details>
     </div>
   ) : (
-    <>
-      <div className="flex items-center gap-4">
-  <Link to="/register" className="text-blue-700/90">
-    REGISTRARSE
-  </Link>
-  <Link to="/login" className="text-blue-700/90">
-    INICIAR SESIÓN
-  </Link>
-</div>
-    </>
+    <div className="flex items-center gap-4">
+      <Link to="/register" className="text-blue-700/90">
+        REGISTRARSE
+      </Link>
+      <Link to="/login" className="text-blue-700/90">
+        INICIAR SESIÓN
+      </Link>
+    </div>
   );
 }
