@@ -151,7 +151,7 @@ export default function ResourceCard({ r }: { r: Recurso }) {
         )}
         {r.fechapublicacion && (
           <span className="flex items-center gap-1">
-            📅 {new Date(r.fechapublicacion).toLocaleDateString()}
+            📅 {new Date(r.fechapublicacion + "T00:00:00").toLocaleDateString()}
           </span>
         )}
       </div>

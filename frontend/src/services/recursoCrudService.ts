@@ -41,6 +41,7 @@ const recursoCrudService = {
     formData.append("titulo", recursoData.titulo || "");
     formData.append("descripcion", recursoData.descripcion || "");
     formData.append("tiporecurso", recursoData.tiporecurso || "");
+    formData.append("fechapublicacion", recursoData.fechapublicacion || "");
     formData.append("idioma", recursoData.idioma || "");
     formData.append("verificado", String(recursoData.verificado ?? false));
 
@@ -58,6 +59,7 @@ const recursoCrudService = {
     formData.append("titulo", recursoData.titulo || "");
     formData.append("descripcion", recursoData.descripcion || "");
     formData.append("tiporecurso", recursoData.tiporecurso || "");
+    formData.append("fechapublicacion", recursoData.fechapublicacion || "");
     formData.append("idioma", recursoData.idioma || "");
     formData.append("verificado", String(recursoData.verificado ?? false));
 

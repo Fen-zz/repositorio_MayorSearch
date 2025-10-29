@@ -216,25 +216,37 @@ export default function RecursoForm() {
             />
           </div>
 
-          {/* Tipo de recurso */}
-          <div>
+          {/* Tipo de recurso (🟢 cambiado a input libre) */}
+            <div>
             <label className="block font-semibold mb-1 text-gray-700">
-              Tipo de recurso *
+                Tipo de recurso *
             </label>
-            <select
-              name="tiporecurso"
-              value={formData.tiporecurso || ""}
-              onChange={handleChange}
-              className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
-              required
-            >
-              <option value="">Seleccionar tipo...</option>
-              <option value="pdf">PDF</option>
-              <option value="video">Video</option>
-              <option value="documento">Documento</option>
-              <option value="presentacion">Presentación</option>
-            </select>
-          </div>
+            <input
+                type="text"
+                name="tiporecurso"
+                value={formData.tiporecurso || ""}
+                onChange={handleChange}
+                placeholder="Ejemplo: Libro, Artículo, Tesis..."
+                className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
+                required
+            />
+            </div>
+
+            {/* 🟢 Nuevo campo: Fecha de publicación */}
+            <div>
+            <label className="block font-semibold mb-1 text-gray-700">
+                Fecha de publicación (YYYY-MM-DD)
+            </label>
+            <input
+                type="text"
+                name="fechapublicacion"
+                value={formData.fechapublicacion || ""}
+                onChange={handleChange}
+                placeholder="2025/10/29"
+                pattern="\d{4}-\d{2}-\d{2}"
+                className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg px-3 py-2 outline-none transition"
+            />
+            </div>
 
           {/* Idioma */}
           <div>
@@ -255,27 +267,91 @@ export default function RecursoForm() {
             </select>
           </div>
 
-          {/* 🟢 Selector múltiple de etiquetas */}
-          <div>
+          {/* 🟢 Selector múltiple de etiquetas mejorado y ordenado */}
+            <div>
             <label className="block font-semibold mb-1 text-gray-700">
-              Etiquetas
+                Etiquetas
             </label>
             <select
-              multiple
-              value={selectedEtiquetas.map(String)}
-              onChange={handleEtiquetaChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                multiple
+                value={selectedEtiquetas.map(String)}
+                onChange={handleEtiquetaChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition h-52"
             >
-              {etiquetas.map((et) => (
-                <option key={et.idetiqueta} value={et.idetiqueta}>
-                  {et.nombreetiqueta}
+                {/* --- Etiquetas de Asignatura --- */}
+                <option disabled className="font-bold text-gray-600 bg-gray-100">
+                — Etiquetas de Asignatura —
                 </option>
-              ))}
+                {etiquetas
+                .filter((et) =>
+                    ["Teoria de grafos", "Analisis numerico"].includes(et.nombreetiqueta)
+                )
+                .sort((a, b) => a.nombreetiqueta.localeCompare(b.nombreetiqueta))
+                .map((et) => (
+                    <option key={et.idetiqueta} value={et.idetiqueta}>
+                    {et.nombreetiqueta}
+                    </option>
+                ))}
+
+                {/* --- Etiquetas de Tipo de recurso --- */}
+                <option disabled className="font-bold text-gray-600 bg-gray-100 mt-2">
+                — Etiquetas de Tipo de recurso —
+                </option>
+                {etiquetas
+                .filter((et) =>
+                    ["Libro", "Articulo", "Tesis", "Monografia", "Documento", "Apuntes"].includes(
+                    et.nombreetiqueta
+                    )
+                )
+                .sort(
+                    (a, b) =>
+                    [
+                        "Libro",
+                        "Articulo",
+                        "Tesis",
+                        "Monografia",
+                        "Documento",
+                        "Apuntes",
+                    ].indexOf(a.nombreetiqueta) -
+                    [
+                        "Libro",
+                        "Articulo",
+                        "Tesis",
+                        "Monografia",
+                        "Documento",
+                        "Apuntes",
+                    ].indexOf(b.nombreetiqueta)
+                )
+                .map((et) => (
+                    <option key={et.idetiqueta} value={et.idetiqueta}>
+                    {et.nombreetiqueta}
+                    </option>
+                ))}
+
+                {/* --- Etiquetas de Nivel académico --- */}
+                <option disabled className="font-bold text-gray-600 bg-gray-100 mt-2">
+                — Etiquetas de Nivel académico —
+                </option>
+                {etiquetas
+                .filter((et) =>
+                    ["Basico", "Intermedio", "Avanzado"].includes(et.nombreetiqueta)
+                )
+                .sort(
+                    (a, b) =>
+                    ["Basico", "Intermedio", "Avanzado"].indexOf(a.nombreetiqueta) -
+                    ["Basico", "Intermedio", "Avanzado"].indexOf(b.nombreetiqueta)
+                )
+                .map((et) => (
+                    <option key={et.idetiqueta} value={et.idetiqueta}>
+                    {et.nombreetiqueta}
+                    </option>
+                ))}
             </select>
+
             <p className="text-sm text-gray-500 mt-1">
-              (Mantén Ctrl o Cmd para seleccionar varias)
+                (Mantén Ctrl o Cmd para seleccionar varias)
             </p>
-          </div>
+            </div>
 
           {/* Verificado (solo admin o docente) */}
           {typeof user === "object" &&
