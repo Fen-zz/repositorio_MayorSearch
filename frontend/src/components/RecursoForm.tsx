@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import recursoCrudService from "../services/recursoCrudService";
 import type { Recurso } from "../services/recursoCrudService";
+import RecursoEtiquetaService, {
+  type RecursoEtiqueta,
+} from "../services/recursoEtiquetaService";
+import API from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { Save, FileUp, ArrowLeft } from "lucide-react";
 
@@ -20,6 +24,22 @@ export default function RecursoForm() {
   const [file, setFile] = useState<File | null>(null);
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // 🟢 Estados para etiquetas
+  const [etiquetas, setEtiquetas] = useState<{ idetiqueta: number; nombreetiqueta: string }[]>([]);
+  const [selectedEtiquetas, setSelectedEtiquetas] = useState<number[]>([]);
+
+  // ✅ Cargar etiquetas desde la BD
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await API.get("/etiquetas/");
+        setEtiquetas(res.data);
+      } catch (error) {
+        console.error("Error cargando etiquetas:", error);
+      }
+    })();
+  }, []);
 
   // ✅ Cargar recurso existente si estamos editando
   useEffect(() => {
@@ -41,6 +61,13 @@ export default function RecursoForm() {
           });
 
           setPreviewFile(data.archivo?.ruta_archivo || null);
+
+          // 🟢 Cargar etiquetas asociadas a este recurso
+          const allLinks = await RecursoEtiquetaService.getAll();
+          const etiquetasAsociadas = allLinks
+            .filter((link: RecursoEtiqueta) => link.idrecurso === Number(id))
+            .map((link: { idetiqueta: any; }) => link.idetiqueta);
+          setSelectedEtiquetas(etiquetasAsociadas);
         } catch (error) {
           alert("Error al cargar el recurso");
         }
@@ -77,6 +104,16 @@ export default function RecursoForm() {
     }
   };
 
+  // 🟢 Manejar selección múltiple de etiquetas
+  const handleEtiquetaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const options = e.target.options;
+    const selected: number[] = [];
+    for (const opt of options) {
+      if (opt.selected) selected.push(Number(opt.value));
+    }
+    setSelectedEtiquetas(selected);
+  };
+
   // ✅ Guardar (crear o actualizar)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,13 +125,40 @@ export default function RecursoForm() {
 
     setLoading(true);
     try {
+      let recursoCreado: Recurso;
+
       if (id) {
-        await recursoCrudService.update(Number(id), formData, file || undefined);
+        recursoCreado = await recursoCrudService.update(
+          Number(id),
+          formData,
+          file || undefined
+        );
         alert("Recurso actualizado correctamente");
       } else {
-        await recursoCrudService.create(formData, file || undefined);
+        recursoCreado = await recursoCrudService.create(
+          formData,
+          file || undefined
+        );
         alert("Recurso creado con éxito");
       }
+
+      // 🟢 Vincular etiquetas seleccionadas
+      if (selectedEtiquetas.length > 0) {
+        const idrecurso = id ? Number(id) : recursoCreado.idrecurso;
+        const allLinks = await RecursoEtiquetaService.getAll();
+
+        // Borramos las etiquetas previas si estamos editando
+        const actuales = allLinks.filter((l: RecursoEtiqueta) => l.idrecurso === idrecurso);
+        for (const vinculo of actuales) {
+          await RecursoEtiquetaService.delete(vinculo);
+        }
+
+        // Agregamos las nuevas etiquetas seleccionadas
+        for (const idetiqueta of selectedEtiquetas) {
+          await RecursoEtiquetaService.add({ idrecurso, idetiqueta });
+        }
+      }
+
       navigate("/admin/recursos");
     } catch (error) {
       console.error(error);
@@ -189,6 +253,28 @@ export default function RecursoForm() {
               <option value="en">Inglés</option>
               <option value="otro">Otro</option>
             </select>
+          </div>
+
+          {/* 🟢 Selector múltiple de etiquetas */}
+          <div>
+            <label className="block font-semibold mb-1 text-gray-700">
+              Etiquetas
+            </label>
+            <select
+              multiple
+              value={selectedEtiquetas.map(String)}
+              onChange={handleEtiquetaChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+            >
+              {etiquetas.map((et) => (
+                <option key={et.idetiqueta} value={et.idetiqueta}>
+                  {et.nombreetiqueta}
+                </option>
+              ))}
+            </select>
+            <p className="text-sm text-gray-500 mt-1">
+              (Mantén Ctrl o Cmd para seleccionar varias)
+            </p>
           </div>
 
           {/* Verificado (solo admin o docente) */}
