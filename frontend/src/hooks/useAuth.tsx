@@ -71,6 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = Boolean(token && user);
 
+  if (loading) {
+  return <div className="flex items-center justify-center h-screen text-blue-600">Cargando sesión...</div>;
+  }
+  
   return (
     <AuthContext.Provider
       value={{ user, rol, token, isAuthenticated, loading, login, logout }}

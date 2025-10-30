@@ -1,5 +1,4 @@
-// src/components/Sidebar.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Menu,
@@ -12,39 +11,52 @@ import {
   Download,
   Settings,
   HelpCircle,
+  Pencil,
 } from "lucide-react";
-// import { useAuth } from "../hooks/useAuth";
-// import { Pencil } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
 
 interface SidebarProps {
-  onCollapse?: (collapsed: boolean) => void; // ✅ Agregamos la prop opcional
+  onCollapse?: (collapsed: boolean) => void;
 }
-// const { user, isAuthenticated } = useAuth();
+
 export default function Sidebar({ onCollapse }: SidebarProps) {
+  const { user, isAuthenticated } = useAuth();
+
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [navItems, setNavItems] = useState<any[]>([]);
 
-  const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
-  const toggleCollapse = () => {
-    const newValue = !isCollapsed;
-    setIsCollapsed(newValue);
-    onCollapse?.(newValue); // ✅ Avisamos al padre (Home)
-  };
-  
-  const navItems = [
+ useEffect(() => {
+  if (!isAuthenticated) return; // ⛔ No montar hasta tener login real
+
+  const userRol =
+    typeof user === "object" && user?.rol ? user.rol : localStorage.getItem("rol");
+
+  const items = [
     { to: "/", label: "Inicio", icon: Home },
     { to: "/explorar", label: "Explorar", icon: Compass },
     { to: "/profile", label: "Mi perfil", icon: User },
     { to: "/profile", label: "Guardados", icon: Bookmark },
     { to: "/notificaciones", label: "Notificaciones", icon: Bell },
     { to: "/descargas", label: "Descargas", icon: Download },
+    ...(userRol === "docente" || userRol === "admin"
+      ? [{ to: "/admin/recursos", label: "Gestor de Recursos", icon: Pencil }]
+      : []),
     { to: "/ayuda", label: "Ayuda", icon: HelpCircle },
     { to: "/ajustes", label: "Ajustes", icon: Settings },
   ];
 
+  setNavItems(items);
+}, [isAuthenticated, user]);
+  const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
+  const toggleCollapse = () => {
+    const newValue = !isCollapsed;
+    setIsCollapsed(newValue);
+    onCollapse?.(newValue);
+  };
+
   return (
     <>
-      {/* BOTÓN HAMBURGUESA (MÓVIL) */}
       <button
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow hover:bg-gray-100 transition"
         onClick={toggleMobile}
@@ -57,7 +69,6 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
         )}
       </button>
 
-      {/* Overlay (solo móvil) */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-30 md:hidden"
@@ -65,7 +76,6 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
         />
       )}
 
-      {/* SIDEBAR */}
       <aside
         className={`fixed top-0 left-0 z-40 h-screen bg-white shadow-lg transition-all duration-300 ease-in-out
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
@@ -73,7 +83,6 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
         ${isCollapsed ? "md:w-20" : "md:w-64"}`}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             {!isCollapsed && (
               <Link to="/">
@@ -93,7 +102,6 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
             </button>
           </div>
 
-          {/* Navegación */}
           <nav className="flex-1 overflow-y-auto py-4 space-y-1">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link
@@ -110,7 +118,6 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
             ))}
           </nav>
 
-          {/* Footer */}
           <div className="p-4 text-xs text-gray-400 border-t border-gray-100">
             {!isCollapsed && <p>© 2025 MayorSearch</p>}
           </div>

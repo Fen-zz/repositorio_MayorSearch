@@ -21,7 +21,7 @@ export default function Login() {
     try {
       const resp = await loginManual(email, password);
 
-      // ✅ Guarda el token en localStorage
+      // Guarda el token en localStorage
       localStorage.setItem("access_token", resp.data.access_token);
 
       // Mantiene tu flujo actual

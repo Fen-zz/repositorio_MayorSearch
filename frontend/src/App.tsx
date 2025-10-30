@@ -2,7 +2,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
-import Root from "./pages/Root"; // Componente que se muestra en "/"
+import Root from "./pages/Root"; 
+import { AuthProvider } from "./hooks/useAuth";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -21,6 +22,7 @@ import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
       <Routes>
         {/* Ruta del Login */}
@@ -88,6 +90,7 @@ function App() {
 
       </Routes>
     </BrowserRouter>
+    </AuthProvider>
   );
 }
 
