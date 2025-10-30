@@ -6,6 +6,7 @@ import RecursoEtiquetaService, {
   type RecursoEtiqueta,
 } from "../services/recursoEtiquetaService";
 import RecursoAutorService, { type RecursoAutor } from "../services/recursoAutorService";
+import RecursoTemaService, { type RecursoTema } from "../services/recursoTemaService";
 import API from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { Save, FileUp, ArrowLeft } from "lucide-react";
@@ -26,15 +27,19 @@ export default function RecursoForm() {
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 🟢 Estados para etiquetas
-  const [etiquetas, setEtiquetas] = useState<{ idetiqueta: number; nombreetiqueta: string }[]>([]);
-  const [selectedEtiquetas, setSelectedEtiquetas] = useState<number[]>([]);
+    // Estados para etiquetas
+    const [etiquetas, setEtiquetas] = useState<{ idetiqueta: number; nombreetiqueta: string }[]>([]);
+    const [selectedEtiquetas, setSelectedEtiquetas] = useState<number[]>([]);
 
-  // 🟢 Estados para autores
-  const [autores, setAutores] = useState<{ idautor: number; nombre: string }[]>([]);
-  const [searchAutor, setSearchAutor] = useState("");
-const [selectedAutores, setSelectedAutores] = useState<{ idautor: number; nombre: string }[]>([]);
+    // Estados para autores
+    const [autores, setAutores] = useState<{ idautor: number; nombre: string }[]>([]);
+    const [searchAutor, setSearchAutor] = useState("");
+    const [selectedAutores, setSelectedAutores] = useState<{ idautor: number; nombre: string }[]>([]);
 
+    // Tema (texto libre)
+    const [temaTexto, setTemaTexto] = useState("");
+    // @ts-ignore
+    const [idTema, setIdTema] = useState<number | null>(null);
 
   // ✅ Cargar etiquetas desde la BD
   useEffect(() => {
@@ -99,25 +104,42 @@ useEffect(() => {
         }
 
         // 🟢 Cargar autores asociados (versión con nombres)
-try {
-  const [allLinksAutor, resAutores] = await Promise.all([
-    RecursoAutorService.getAll(),
-    API.get("/autores/"),
-  ]);
+        try {
+        const [allLinksAutor, resAutores] = await Promise.all([
+            RecursoAutorService.getAll(),
+            API.get("/autores/"),
+        ]);
 
-  const autoresAsociados = allLinksAutor
-  .filter((link: RecursoAutor) => link.idrecurso === Number(id))
-  .map((link: { idautor: any }) => {
-    const autor = resAutores.data.find((a: any) => a.idautor === link.idautor);
-    return autor
-      ? { idautor: autor.idautor, nombre: autor.nombre || autor.nombreautor }
-      : { idautor: link.idautor, nombre: `Autor #${link.idautor}` };
-  });
+        const autoresAsociados = allLinksAutor
+        .filter((link: RecursoAutor) => link.idrecurso === Number(id))
+        .map((link: { idautor: any }) => {
+            const autor = resAutores.data.find((a: any) => a.idautor === link.idautor);
+            return autor
+            ? { idautor: autor.idautor, nombre: autor.nombre || autor.nombreautor }
+            : { idautor: link.idautor, nombre: `Autor #${link.idautor}` };
+        });
 
-  setSelectedAutores(autoresAsociados);
-} catch (error) {
-  console.error("Error cargando autores asociados:", error);
-}
+        setSelectedAutores(autoresAsociados);
+        } catch (error) {
+        console.error("Error cargando autores asociados:", error);
+        }
+
+        try {
+        const resTemas = await API.get("/temas/");
+        const allLinksTemas = await RecursoTemaService.getAll();
+        const vinculo = allLinksTemas.find(
+            (link: RecursoTema) => link.idrecurso === Number(id)
+        );
+        if (vinculo) {
+            const tema = resTemas.data.find((t: any) => t.idtema === vinculo.idtema);
+            if (tema) {
+            setTemaTexto(tema.nombretema);
+            setIdTema(tema.idtema);
+            }
+        }
+        } catch (error) {
+        console.error("Error cargando tema asociado:", error);
+        }
 
       })();
     }
@@ -224,13 +246,49 @@ try {
         }
         }
 
+        // Vincular tema (solo si hay texto)
+        if (temaTexto.trim() !== "") {
+        const idrecurso = id ? Number(id) : recursoCreado.idrecurso;
+
+        try {
+            // Buscar si el tema ya existe
+            const resTemas = await API.get("/temas/");
+            let temaExistente = resTemas.data.find(
+            (t: any) => t.nombretema.toLowerCase() === temaTexto.trim().toLowerCase()
+            );
+
+            // Si no existe, crearlo
+            if (!temaExistente) {
+            const nuevo = await API.post("/temas/", { nombretema: temaTexto.trim() });
+            temaExistente = nuevo.data;
+            }
+
+            // Borrar vínculo previo si estamos editando
+            const allLinksTemas = await RecursoTemaService.getAll();
+            const actuales = allLinksTemas.filter(
+            (l: RecursoTema) => l.idrecurso === idrecurso
+            );
+            for (const vinculo of actuales) {
+            await RecursoTemaService.delete(vinculo);
+            }
+
+            // Crear el nuevo vínculo
+            await RecursoTemaService.add({
+            idrecurso,
+            idtema: temaExistente.idtema,
+            });
+        } catch (error) {
+            console.error("Error vinculando tema:", error);
+        }
+        }
+        
       navigate("/admin/recursos");
     } catch (error) {
       console.error(error);
       alert("Error al guardar el recurso");
     } finally {
       setLoading(false);
-    }
+    }  
   };
 
   return (
@@ -368,28 +426,43 @@ try {
             )}
 
             {/* Autores seleccionados */}
-<div className="flex flex-wrap gap-2 mt-2">
-  {selectedAutores.map((a) => (
-  <span
-    key={a.idautor}
-    className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-  >
-    {a.nombre}
-    <button
-      type="button"
-      onClick={() =>
-        setSelectedAutores((prev) => prev.filter((x) => x.idautor !== a.idautor))
-      }
-      className="text-red-500 hover:text-red-700 ml-1"
-    >
-      ✕
-    </button>
-  </span>
-))}
-</div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                {selectedAutores.map((a) => (
+                <span
+                    key={a.idautor}
+                    className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                >
+                    {a.nombre}
+                    <button
+                    type="button"
+                    onClick={() =>
+                        setSelectedAutores((prev) => prev.filter((x) => x.idautor !== a.idautor))
+                    }
+                    className="text-red-500 hover:text-red-700 ml-1"
+                    >
+                    ✕
+                    </button>
+                </span>
+                ))}
+                </div>
             </div>
 
-
+            {/* 🟢 Campo para tema */}
+            <div>
+            <label className="block font-semibold mb-1 text-gray-700">
+                Tema principal
+            </label>
+            <input
+                type="text"
+                value={temaTexto}
+                onChange={(e) => setTemaTexto(e.target.value)}
+                placeholder="Ejemplo: Álgebra lineal, Redes, Optimización..."
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+                Escribe libremente el tema principal del recurso.
+            </p>
+            </div>
 
           {/* 🟢 Selector múltiple de etiquetas mejorado y ordenado */}
             <div>
