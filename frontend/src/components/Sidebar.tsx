@@ -13,11 +13,13 @@ import {
   Settings,
   HelpCircle,
 } from "lucide-react";
+// import { useAuth } from "../hooks/useAuth";
+// import { Pencil } from "lucide-react";
 
 interface SidebarProps {
   onCollapse?: (collapsed: boolean) => void; // ✅ Agregamos la prop opcional
 }
-
+// const { user, isAuthenticated } = useAuth();
 export default function Sidebar({ onCollapse }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -28,7 +30,7 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
     setIsCollapsed(newValue);
     onCollapse?.(newValue); // ✅ Avisamos al padre (Home)
   };
-
+  
   const navItems = [
     { to: "/", label: "Inicio", icon: Home },
     { to: "/explorar", label: "Explorar", icon: Compass },
