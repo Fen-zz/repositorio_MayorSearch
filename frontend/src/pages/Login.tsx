@@ -26,7 +26,7 @@ export default function Login() {
 
       // Mantiene tu flujo actual
      login(resp.data.usuario, resp.data.usuario.rol, resp.data.access_token);
-
+      await new Promise((resolve) => setTimeout(resolve, 300));
       alert("Inicio de sesión exitoso ✅");
       navigate("/home");
     } catch (error) {
