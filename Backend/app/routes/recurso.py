@@ -107,6 +107,7 @@ async def update_recurso(
     descripcion: str = Form(None),
     fechapublicacion: str = Form(None),
     idioma: str = Form(None),
+    verificado: bool = Form(None),
     file: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
@@ -148,7 +149,7 @@ async def update_recurso(
     if descripcion is not None: recurso.descripcion = descripcion
     if fechapublicacion is not None: recurso.fechapublicacion = fechapublicacion
     if idioma is not None: recurso.idioma = idioma
-
+    if verificado is not None: recurso.verificado = verificado
     db.add(recurso)
     db.commit()
     db.refresh(recurso)

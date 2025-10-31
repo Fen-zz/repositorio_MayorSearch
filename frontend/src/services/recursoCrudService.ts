@@ -61,7 +61,7 @@ const recursoCrudService = {
     formData.append("tiporecurso", recursoData.tiporecurso || "");
     formData.append("fechapublicacion", recursoData.fechapublicacion || "");
     formData.append("idioma", recursoData.idioma || "");
-    formData.append("verificado", String(recursoData.verificado ?? false));
+    formData.append("verificado", recursoData.verificado ? "true" : "false");
 
     const res = await API.put(`/recursos/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
