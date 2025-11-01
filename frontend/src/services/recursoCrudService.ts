@@ -7,8 +7,9 @@ export interface Archivo {
   ruta_archivo: string;
 }
 
+// 🧠 Actualizamos el tipo Recurso para incluir los campos que vienen de /recursos/buscar
 export interface Recurso {
-  idrecurso: number;               // ahora requerido
+  idrecurso: number;
   titulo: string;
   descripcion?: string;
   tiporecurso: string;
@@ -17,14 +18,21 @@ export interface Recurso {
   fechapublicacion?: string;
   idarchivo?: number;
   archivo?: Archivo;
-  idusuario_creador?: number;     // opcional, lo usamos para control de acceso
+  idusuario_creador?: number;
+
+  // 👇 Nuevos campos agregados por el endpoint /recursos/buscar
+  autores?: string;
+  temas?: string;
+  etiquetas?: string;
+  ubicacion?: string;
 }
 
 const recursoCrudService = {
-  // ✅ Obtener todos los recursos
+  // ✅ Obtener todos los recursos (ahora desde /recursos/buscar)
   async getAll(): Promise<Recurso[]> {
-    const res = await API.get("/recursos/");
-    return res.data;
+    const res = await API.get("/recursos/recursos/buscar");
+    // El endpoint /recursos/buscar devuelve algo tipo { resultados: [...] }
+    return res.data.resultados || res.data || [];
   },
 
   // ✅ Obtener un recurso por ID
