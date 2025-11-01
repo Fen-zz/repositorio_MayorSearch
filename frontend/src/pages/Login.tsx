@@ -69,7 +69,7 @@ export default function Login() {
                 ASIGNATURAS
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="w-4 h-4 mt-[2px]"
+                  className="w-4 h-4 mt-0.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

@@ -26,28 +26,35 @@ export default function Sidebar({ onCollapse }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [navItems, setNavItems] = useState<any[]>([]);
 
- useEffect(() => {
-  if (!isAuthenticated) return; // ⛔ No montar hasta tener login real
+  useEffect(() => {
+    // 🔹 Permite sidebar incluso sin usuario logueado
+    const userRol =
+      typeof user === "object" && user?.rol
+        ? user.rol
+        : localStorage.getItem("rol") || "visitante";
 
-  const userRol =
-    typeof user === "object" && user?.rol ? user.rol : localStorage.getItem("rol");
+    const baseItems = [
+      { to: "/", label: "Inicio", icon: Home },
+      { to: "/explorar", label: "Explorar", icon: Compass },
+      { to: "/profile", label: "Mi perfil", icon: User },
+      { to: "/profile", label: "Guardados", icon: Bookmark },
+      { to: "/notificaciones", label: "Notificaciones", icon: Bell },
+      { to: "/descargas", label: "Descargas", icon: Download },
+    ];
 
-  const items = [
-    { to: "/", label: "Inicio", icon: Home },
-    { to: "/explorar", label: "Explorar", icon: Compass },
-    { to: "/profile", label: "Mi perfil", icon: User },
-    { to: "/profile", label: "Guardados", icon: Bookmark },
-    { to: "/notificaciones", label: "Notificaciones", icon: Bell },
-    { to: "/descargas", label: "Descargas", icon: Download },
-    ...(userRol === "docente" || userRol === "admin"
-      ? [{ to: "/admin/recursos", label: "Gestor de Recursos", icon: Pencil }]
-      : []),
-    { to: "/ayuda", label: "Ayuda", icon: HelpCircle },
-    { to: "/ajustes", label: "Ajustes", icon: Settings },
-  ];
+    const adminItems =
+      userRol === "docente" || userRol === "admin"
+        ? [{ to: "/admin/recursos", label: "Gestor de Recursos", icon: Pencil }]
+        : [];
 
-  setNavItems(items);
-}, [isAuthenticated, user]);
+    const footerItems = [
+      { to: "/ayuda", label: "Ayuda", icon: HelpCircle },
+      { to: "/ajustes", label: "Ajustes", icon: Settings },
+    ];
+
+    setNavItems([...baseItems, ...adminItems, ...footerItems]);
+  }, [isAuthenticated, user]); // 👈 se actualiza cuando inicia/cierra sesión
+
   const toggleMobile = () => setIsMobileOpen(!isMobileOpen);
   const toggleCollapse = () => {
     const newValue = !isCollapsed;
