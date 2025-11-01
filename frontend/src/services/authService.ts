@@ -1,7 +1,7 @@
 import API from "./api";
-import axios from "axios";
+// import axios from "axios";
 
-const API_URL = "http://localhost:8000";
+// const API_URL = "http://localhost:8000";
 
 export const googleLogin = (id_token: string) => {
   const formData = new FormData();
@@ -14,7 +14,8 @@ export const loginManual = (email: string, password: string) => {
   formData.append("email", email);
   formData.append("password", password);
   // 👇 aquí está el cambio importante
-  return axios.post(`${API_URL}/login`, formData);
+  return API.post("/login", formData);
+
 };
 
 import api from "./api";

@@ -1,3 +1,4 @@
+// src/pages/AnalisisNumerico.tsx
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import UserMenu from "../components/UserMenu";
@@ -5,12 +6,15 @@ import ResourceCard from "../components/ResourceCard";
 import SearchBarAnalisisNumerico from "../components/SearchBarAnalisisNumerico";
 import { buscarRecursos } from "../services/recursoService";
 import { Link } from "react-router-dom";
+import { ArrowUpAZ, ArrowDownAZ } from "lucide-react"; // 🧠 import de íconos
+
 export default function AnalisisNumerico() {
   const [resultados, setResultados] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastQuery, setLastQuery] = useState<string>("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showTop, setShowTop] = useState(true);
+  const [ordenAsc, setOrdenAsc] = useState(true); // 🧠 nuevo estado
 
   // 🎢 Efecto de scroll (mismo que en Teoría de Grafos)
   useEffect(() => {
@@ -72,14 +76,31 @@ export default function AnalisisNumerico() {
     setLoading(true);
     try {
       const data = await buscarRecursos(params);
-      setResultados(data.resultados || []);
+      // Orden inicial A-Z
+      const sorted = (data.resultados || []).sort((a: any, b: any) =>
+        a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base" })
+      );
+      setResultados(sorted);
       setLastQuery(params.q || "");
+      setOrdenAsc(true);
     } catch (err: any) {
       console.error("Error al buscar recursos:", err);
       setResultados([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Alternar orden alfabético
+  const toggleOrden = () => {
+    const nuevoOrdenAsc = !ordenAsc;
+    setOrdenAsc(nuevoOrdenAsc);
+    const ordenados = [...resultados].sort((a, b) =>
+      nuevoOrdenAsc
+        ? a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base" })
+        : b.titulo.localeCompare(a.titulo, "es", { sensitivity: "base" })
+    );
+    setResultados(ordenados);
   };
 
   return (
@@ -122,9 +143,30 @@ export default function AnalisisNumerico() {
                 <p className="text-sm text-[#7B0C0C] mb-2">
                   Búsqueda / <span className="font-semibold">“{lastQuery}”</span>
                 </p>
-                <h2 className="text-3xl font-bold mb-1 text-[#7B0C0C]">
-                  Resultados para: <span className="text-[#7B0C0C]">“{lastQuery}”</span>
-                </h2>
+
+                {/* 🧩 Encabezado con botón A-Z/Z-A */}
+                <div className="flex items-center justify-between pr-6">
+                  <h2 className="text-3xl font-bold mb-1 text-[#7B0C0C]">
+                    Resultados para: <span className="text-[#7B0C0C]">“{lastQuery}”</span>
+                  </h2>
+
+                  {resultados.length > 0 && (
+                    <button
+                      onClick={toggleOrden}
+                      className="flex items-center gap-2 text-[#7B0C0C] font-semibold border border-[#7B0C0C] rounded-md px-3 py-2 hover:bg-[#7B0C0C] hover:text-white transition text-sm"
+                    >
+                      {ordenAsc ? (
+                        <>
+                          <ArrowUpAZ size={16} /> A-Z
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDownAZ size={16} /> Z-A
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 

@@ -8,22 +8,34 @@ export default function ManualLoginButton() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      alert("Por favor completa ambos campos.");
-      return;
-    }
+const handleLogin = async () => {
+  console.log("🟦 Botón de login manual presionado");
 
-    try {
-      const resp = await loginManual(email, password);
-      login(resp.data.usuario, resp.data.rol, resp.data.access_token);
-      alert("Inicio de sesión exitoso ✅");
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Error en login manual:", error);
-      alert("Credenciales inválidas 😩");
-    }
-  };
+  if (!email || !password) {
+    alert("Por favor completa ambos campos.");
+    return;
+  }
+
+  try {
+    console.log("📡 Enviando petición a loginManual...");
+    const resp = await loginManual(email, password);
+    console.log("✅ Respuesta login manual:", resp.data);
+
+    // ⚠️ Detectamos el rol correctamente
+    const userData = resp.data.usuario;
+    const rolDetectado =
+      resp.data.rol ||
+      userData?.rol ||
+      (userData?.email?.includes("admin") ? "admin" : "normal"); // fallback provisional
+
+    login(userData, rolDetectado, resp.data.access_token);
+
+    alert(`Inicio de sesión exitoso ✅ (Rol: ${rolDetectado})`);
+    console.log("📦 Datos completos recibidos:", resp.data);
+  } catch (error) {
+    console.error("💥 Error en login manual:", error);
+  }
+};
 
   return (
     <div className="space-y-4">

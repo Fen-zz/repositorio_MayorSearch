@@ -6,12 +6,15 @@ import ResourceCard from "../components/ResourceCard";
 import SearchBarTeoriaGrafos from "../components/SearchBarTeoriaGrafos";
 import { buscarRecursos } from "../services/recursoService";
 import { Link } from "react-router-dom";
+import { ArrowUpAZ, ArrowDownAZ } from "lucide-react"; // 🧠 nuevo import
+
 export default function TeoriaDeGrafos() {
   const [resultados, setResultados] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastQuery, setLastQuery] = useState<string>("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showTop, setShowTop] = useState(true);
+  const [ordenAsc, setOrdenAsc] = useState(true); // 🧠 nuevo estado
 
   // 👇 Efecto del scroll como en Home
   useEffect(() => {
@@ -55,7 +58,6 @@ export default function TeoriaDeGrafos() {
       .map((e) => e.trim())
       .filter(Boolean);
 
-    // Si no está ya en las etiquetas, la agregamos
     if (!etiquetasArray.includes("Teoria de grafos")) {
       etiquetasArray.push("Teoria de grafos");
     }
@@ -67,7 +69,6 @@ export default function TeoriaDeGrafos() {
       etiquetas: etiquetasFinal,
     };
 
-    // eliminamos asignatura si llegara por accidente
     if (params.asignatura) delete params.asignatura;
 
     console.log("🚀 Parámetros enviados a buscarRecursos:", params);
@@ -75,14 +76,31 @@ export default function TeoriaDeGrafos() {
     setLoading(true);
     try {
       const data = await buscarRecursos(params);
-      setResultados(data.resultados || []);
+      // Ordenamos por defecto A-Z (igual que en Home)
+      const sorted = (data.resultados || []).sort((a: any, b: any) =>
+        a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base" })
+      );
+      setResultados(sorted);
       setLastQuery(params.q || "");
+      setOrdenAsc(true);
     } catch (err: any) {
       console.error("Error al buscar recursos:", err);
       setResultados([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 🧠 Nuevo: función para alternar orden alfabético
+  const toggleOrden = () => {
+    const nuevoOrdenAsc = !ordenAsc;
+    setOrdenAsc(nuevoOrdenAsc);
+    const ordenados = [...resultados].sort((a, b) =>
+      nuevoOrdenAsc
+        ? a.titulo.localeCompare(b.titulo, "es", { sensitivity: "base" })
+        : b.titulo.localeCompare(a.titulo, "es", { sensitivity: "base" })
+    );
+    setResultados(ordenados);
   };
 
   return (
@@ -125,9 +143,31 @@ export default function TeoriaDeGrafos() {
                 <p className="text-sm text-[#0f5d38] mb-2">
                   Búsqueda / <span className="font-semibold">“{lastQuery}”</span>
                 </p>
-                <h2 className="text-3xl font-bold mb-1 text-[#0f5d38]">
-                  Resultados para: <span className="text-[#0f5d38]">“{lastQuery}”</span>
-                </h2>
+
+                {/* Encabezado con botón A-Z/Z-A */}
+                <div className="flex items-center justify-between pr-6">
+                  <h2 className="text-3xl font-bold mb-1 text-[#0f5d38]">
+                    Resultados para: <span className="text-[#0f5d38]">“{lastQuery}”</span>
+                  </h2>
+
+                  {/* 🧩 Botón de orden alfabético */}
+                  {resultados.length > 0 && (
+                    <button
+                      onClick={toggleOrden}
+                      className="flex items-center gap-2 text-[#0f5d38] font-semibold border border-[#0f5d38] rounded-md px-3 py-2 hover:bg-[#0f5d38] hover:text-white transition text-sm"
+                    >
+                      {ordenAsc ? (
+                        <>
+                          <ArrowUpAZ size={16} /> A-Z
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDownAZ size={16} /> Z-A
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 

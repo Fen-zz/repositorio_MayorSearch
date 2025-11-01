@@ -201,16 +201,26 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
     if not verify_password(password, usuario.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Contraseña incorrecta")
 
-    # Generar token JWT reutilizando la función existente
     token_data = {"sub": usuario.email, "rol": usuario.rol, "idusuario": usuario.idusuario}
     access_token = create_access_token(token_data)
 
+    # 🚀 Aquí enviamos el objeto completo (no solo el nombre)
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "usuario": usuario.nombreusuario,
+        "usuario": {
+            "idusuario": usuario.idusuario,
+            "nombreusuario": usuario.nombreusuario,
+            "email": usuario.email,
+            "telefono": usuario.telefono,
+            "codigoestudiantil": usuario.codigoestudiantil,
+            "rol": usuario.rol,
+            "proveedor": usuario.proveedor,
+            "idproveedor": usuario.idproveedor,
+        },
         "rol": usuario.rol
     }
+
 
 @router.post("/login/google")
 def login_google(id_token_str: str = Form(...), db: Session = Depends(get_db)):
