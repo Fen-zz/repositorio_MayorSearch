@@ -12,14 +12,14 @@ export default function PrivateRoute({ roles, children }: PrivateRouteProps) {
 
   // Si todavía está cargando la sesión, mostramos un loader
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-lg font-semibold text-gray-600 animate-pulse">
-          Cargando sesión...
-        </div>
+  return (
+    <div className="flex items-center justify-center h-screen bg-gray-50">
+      <div className="text-lg font-semibold text-gray-600 animate-pulse">
+        Cargando sesión...
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Si no está autenticado, lo mandamos al login
   if (!isAuthenticated) {

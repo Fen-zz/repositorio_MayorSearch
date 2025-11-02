@@ -29,27 +29,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true); // 🧩 NUEVO
 
-  useEffect(() => {
+useEffect(() => {
+  const loadSession = async () => {
     const storedToken = localStorage.getItem("access_token");
     const storedUser = localStorage.getItem("user");
     const storedRol = localStorage.getItem("rol");
 
     if (storedToken && storedUser && storedRol) {
-  setToken(storedToken);
-  setRol(storedRol);
+      setToken(storedToken);
+      setRol(storedRol);
 
-  try {
-    const parsedUser =
-      typeof storedUser === "string" && storedUser.startsWith("{")
-        ? JSON.parse(storedUser)
-        : { nombreusuario: storedUser, rol: storedRol };
-    setUser(parsedUser);
-  } catch {
-    setUser({ nombreusuario: storedUser, rol: storedRol });
-  }
-}
-    setLoading(false); // 🧩 Marcamos que ya terminó la carga
-  }, []);
+      try {
+        const parsedUser =
+          typeof storedUser === "string" && storedUser.startsWith("{")
+            ? JSON.parse(storedUser)
+            : { nombreusuario: storedUser, rol: storedRol };
+        setUser(parsedUser);
+      } catch {
+        setUser({ nombreusuario: storedUser, rol: storedRol });
+      }
+    }
+
+    setLoading(false);
+  };
+
+  loadSession();
+}, []);
+
 
   const login = (user: User | string, rol: string, token: string) => {
     localStorage.setItem("access_token", token);

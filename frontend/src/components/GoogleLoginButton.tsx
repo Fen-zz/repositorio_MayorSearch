@@ -17,26 +17,32 @@ export default function GoogleLoginButton() {
     }
 
     try {
-      const id_token = credentialResponse.credential;
-      const resp = await googleLogin(id_token);
+  const id_token = credentialResponse.credential;
+  const resp = await googleLogin(id_token);
 
-      console.log("Respuesta del backend:", resp.data);
-      // Usa el contexto para guardar sesión
-      login(
-        resp.data.usuario,     // user
-        resp.data.rol,         // rol
-        resp.data.access_token // token
-      );
+  console.log("Respuesta del backend:", resp.data);
 
-      console.log("Usuario guardado en contexto:", resp.data.usuario);
-      console.log("Rol guardado en contexto:", resp.data.rol);
+  // 🔧 NORMALIZAMOS el formato del usuario antes de enviarlo al contexto
+  const userData =
+    typeof resp.data.usuario === "string"
+      ? { nombreusuario: resp.data.usuario, rol: resp.data.rol }
+      : resp.data.usuario;
 
-      alert("Inicio de sesión exitoso ✅");
-      navigate("/Home");
-    } catch (error) {
-      console.error("Error en el login con Google:", error);
-      alert("Error al iniciar sesión con Google 😩");
-    }
+  login(
+    userData,            // user (ya consistente con login manual)
+    resp.data.rol,       // rol
+    resp.data.access_token // token
+  );
+
+  console.log("Usuario guardado en contexto:", userData);
+  console.log("Rol guardado en contexto:", resp.data.rol);
+
+  alert("Inicio de sesión exitoso ✅");
+  navigate("/Home");
+} catch (error) {
+  console.error("Error en el login con Google:", error);
+  alert("Error al iniciar sesión con Google 😩");
+}
   };
 
   return (
